@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>噪声调色盘</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Noise Colour Palette</p>
+          <h1>噪声调色盘</h1>
+        </div>
+        <div class="status-strip" aria-label="当前状态">
+          <span id="audioState" class="status-pill">已暂停</span>
+          <span id="noiseName" class="status-pill accent">粉红倾向</span>
+        </div>
+      </header>
+
+      <section class="workspace" aria-label="噪声调色盘工作区">
+        <section class="panel palette-panel" aria-labelledby="paletteTitle">
+          <div class="panel-heading">
+            <h2 id="paletteTitle">色盘</h2>
+            <span id="colourValue" class="metric">H 335 / S 75%</span>
+          </div>
+          <div class="wheel-wrap">
+            <canvas
+              id="colorWheel"
+              class="color-wheel"
+              width="360"
+              height="360"
+              tabindex="0"
+              aria-label="拖动选择噪声颜色"
+            ></canvas>
+          </div>
+          <div class="readout-grid">
+            <div>
+              <span class="readout-label">当前颜色</span>
+              <span class="swatch-row"><span id="selectedSwatch" class="swatch"></span><strong id="selectedHex">#E66E9B</strong></span>
+            </div>
+            <div>
+              <span class="readout-label">频谱倾向</span>
+              <strong id="tiltValue">-0.94</strong>
+            </div>
+            <div>
+              <span class="readout-label">染色强度</span>
+              <strong id="saturationValue">75%</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel listen-panel" aria-labelledby="listenTitle">
+          <div class="panel-heading">
+            <h2 id="listenTitle">监听</h2>
+            <span id="meterValue" class="metric">0 dB</span>
+          </div>
+          <button id="playToggle" class="primary-action" type="button">开始监听</button>
+          <div class="meter" aria-hidden="true"><span id="levelMeter"></span></div>
+
+          <label class="control-row">
+            <span>输出音量</span>
+            <input id="volumeControl" type="range" min="0" max="100" value="36" />
+            <strong id="volumeValue">36%</strong>
+          </label>
+
+          <div class="button-row">
+            <button id="resetButton" type="button">重置为白噪声</button>
+            <button id="randomButton" type="button">随机颜色</button>
+          </div>
+        </section>
+
+        <section class="panel spectrum-panel" aria-labelledby="spectrumTitle">
+          <div class="panel-heading">
+            <h2 id="spectrumTitle">频谱</h2>
+            <span class="metric">20 Hz - 20 kHz</span>
+          </div>
+          <canvas id="spectrumCanvas" class="spectrum-canvas" width="720" height="300" aria-label="当前噪声频谱预览"></canvas>
+          <div id="mixLegend" class="mix-legend" aria-label="噪声混合比例"></div>
+        </section>
+
+        <section class="panel export-panel" aria-labelledby="exportTitle">
+          <div class="panel-heading">
+            <h2 id="exportTitle">保存音频</h2>
+            <span id="exportState" class="metric">待生成</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>时长</span>
+              <input id="durationInput" type="number" min="1" max="600" step="1" value="30" />
+            </label>
+            <label>
+              <span>单位</span>
+              <select id="durationUnit">
+                <option value="seconds">秒</option>
+                <option value="minutes">分钟</option>
+              </select>
+            </label>
+            <label>
+              <span>音频格式</span>
+              <select id="formatSelect">
+                <option value="wav16">WAV 16-bit PCM</option>
+                <option value="wav32">WAV 32-bit Float</option>
+                <option value="aiff16">AIFF 16-bit PCM</option>
+                <option value="au16">AU 16-bit PCM</option>
+              </select>
+            </label>
+            <label>
+              <span>采样率</span>
+              <select id="sampleRateSelect">
+                <option value="44100">44.1 kHz</option>
+                <option value="48000">48 kHz</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="filename-row">
+            <span>文件名</span>
+            <input id="filenameInput" type="text" value="noise-colour" maxlength="80" />
+          </label>
+
+          <label class="check-row">
+            <input id="normalizeExport" type="checkbox" checked />
+            <span>峰值归一化到 -1 dB</span>
+          </label>
+
+          <button id="exportButton" class="primary-action" type="button">生成并下载</button>
+          <div class="progress" aria-hidden="true"><span id="exportProgress"></span></div>
+          <a id="downloadLink" class="download-link" href="#" download hidden>下载最近生成的音频</a>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
