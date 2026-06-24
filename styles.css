@@ -143,6 +143,24 @@ h2 {
   align-items: stretch;
 }
 
+.mixer-section {
+  margin-top: 18px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.mixer-grid {
+  display: grid;
+  grid-template-columns: minmax(460px, 1.45fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+
 .panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -224,6 +242,13 @@ h2 {
   gap: 14px;
 }
 
+.eq-panel,
+.effects-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .primary-action {
   border-color: var(--accent-strong);
   background: var(--accent);
@@ -257,7 +282,8 @@ h2 {
 
 .control-row,
 .filename-row,
-.check-row {
+.check-row,
+.switch-row {
   display: grid;
   gap: 8px;
   color: var(--muted);
@@ -274,12 +300,61 @@ h2 {
   text-align: right;
 }
 
-.spectrum-canvas {
+.switch-row {
+  grid-template-columns: 18px auto;
+  align-items: center;
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.switch-row input {
+  min-height: 0;
+}
+
+.control-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.spectrum-canvas,
+.eq-canvas {
   width: 100%;
   min-height: 260px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcf9;
+}
+
+.eq-canvas {
+  min-height: 300px;
+  touch-action: none;
+  outline: none;
+}
+
+.eq-canvas:focus-visible {
+  box-shadow: 0 0 0 4px rgba(47, 140, 103, 0.24);
+}
+
+.eq-band-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(88px, 1fr));
+  gap: 10px;
+}
+
+.eq-band {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.eq-band input {
+  width: 100%;
+}
+
+.eq-band strong {
+  color: var(--ink);
 }
 
 .mix-legend {
@@ -356,6 +431,10 @@ h2 {
     grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
   }
 
+  .mixer-grid {
+    grid-template-columns: 1fr;
+  }
+
   .spectrum-panel {
     grid-column: 1 / -1;
     grid-row: auto;
@@ -373,11 +452,20 @@ h2 {
     flex-direction: column;
   }
 
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   h1 {
     font-size: 28px;
   }
 
   .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .mixer-grid {
     grid-template-columns: 1fr;
   }
 
@@ -388,7 +476,8 @@ h2 {
 
   .readout-grid,
   .form-grid,
-  .mix-legend {
+  .mix-legend,
+  .eq-band-grid {
     grid-template-columns: 1fr;
   }
 

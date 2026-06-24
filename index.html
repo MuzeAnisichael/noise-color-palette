@@ -132,6 +132,81 @@
           <a id="downloadLink" class="download-link" href="#" download hidden>下载最近生成的音频</a>
         </section>
       </section>
+
+      <section class="mixer-section" aria-label="噪声混音器">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Feature 2</p>
+            <h2>噪声混音器</h2>
+          </div>
+          <label class="switch-row">
+            <input id="mixerBypass" type="checkbox" />
+            <span>旁路混音处理</span>
+          </label>
+        </div>
+
+        <section class="mixer-grid">
+          <section class="panel eq-panel" aria-labelledby="eqTitle">
+            <div class="panel-heading">
+              <h2 id="eqTitle">EQ 曲线</h2>
+              <span id="eqReadout" class="metric">1 kHz / 0 dB</span>
+            </div>
+            <canvas id="eqCanvas" class="eq-canvas" width="820" height="320" tabindex="0" aria-label="拖动 EQ 曲线控制点"></canvas>
+            <div id="eqBandControls" class="eq-band-grid" aria-label="EQ 频段增益"></div>
+            <div class="button-row">
+              <button id="eqResetButton" type="button">重置 EQ</button>
+              <button id="eqSmileButton" type="button">微笑曲线</button>
+              <button id="eqWarmButton" type="button">暖色低频</button>
+            </div>
+          </section>
+
+          <section class="panel effects-panel" aria-labelledby="effectsTitle">
+            <div class="panel-heading">
+              <h2 id="effectsTitle">混响与空间</h2>
+              <span id="spaceReadout" class="metric">宽度 100%</span>
+            </div>
+
+            <div class="control-stack">
+              <label class="control-row">
+                <span>混响量</span>
+                <input id="reverbMixControl" type="range" min="0" max="100" value="18" />
+                <strong id="reverbMixValue">18%</strong>
+              </label>
+              <label class="control-row">
+                <span>房间大小</span>
+                <input id="reverbSizeControl" type="range" min="0" max="100" value="46" />
+                <strong id="reverbSizeValue">46%</strong>
+              </label>
+              <label class="control-row">
+                <span>高频阻尼</span>
+                <input id="reverbDampingControl" type="range" min="0" max="100" value="42" />
+                <strong id="reverbDampingValue">42%</strong>
+              </label>
+              <label class="control-row">
+                <span>声像位置</span>
+                <input id="panControl" type="range" min="-100" max="100" value="0" />
+                <strong id="panValue">居中</strong>
+              </label>
+              <label class="control-row">
+                <span>空间宽度</span>
+                <input id="widthControl" type="range" min="0" max="200" value="100" />
+                <strong id="widthValue">100%</strong>
+              </label>
+              <label class="control-row">
+                <span>空间延迟</span>
+                <input id="spaceDelayControl" type="range" min="0" max="35" value="14" />
+                <strong id="spaceDelayValue">14 ms</strong>
+              </label>
+            </div>
+
+            <div class="button-row">
+              <button id="spaceResetButton" type="button">重置空间</button>
+              <button id="spaceWideButton" type="button">宽阔空间</button>
+              <button id="spaceNearButton" type="button">近场干声</button>
+            </div>
+          </section>
+        </section>
+      </section>
     </main>
 
     <script src="app.js"></script>
