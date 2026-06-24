@@ -1,11 +1,11 @@
 "use strict";
 
 const ANCHORS = [
-  { id: "brown", label: "棕/红", hue: 20, beta: -2, color: "#99542d" },
-  { id: "pink", label: "粉红", hue: 335, beta: -1, color: "#e66e9b" },
-  { id: "green", label: "绿色", hue: 120, beta: 0, color: "#37a46d" },
-  { id: "blue", label: "蓝色", hue: 218, beta: 1, color: "#2f82c6" },
-  { id: "violet", label: "紫色", hue: 280, beta: 2, color: "#7d57bd" },
+  { id: "brown", labelZh: "棕/红", labelEn: "Brown/Red", hue: 20, beta: -2, color: "#99542d" },
+  { id: "pink", labelZh: "粉红", labelEn: "Pink", hue: 335, beta: -1, color: "#e66e9b" },
+  { id: "green", labelZh: "绿色", labelEn: "Green", hue: 120, beta: 0, color: "#37a46d" },
+  { id: "blue", labelZh: "蓝色", labelEn: "Blue", hue: 218, beta: 1, color: "#2f82c6" },
+  { id: "violet", labelZh: "紫色", labelEn: "Violet", hue: 280, beta: 2, color: "#7d57bd" },
 ];
 
 const EQ_BANDS = [
@@ -19,7 +19,147 @@ const EQ_BANDS = [
 const MIX_KEYS = ["white", ...ANCHORS.map((anchor) => anchor.id)];
 const root = document.documentElement;
 
+const I18N = {
+  zh: {
+    appTitle: "噪声调色盘",
+    currentStatus: "当前状态",
+    workspaceAria: "噪声调色盘工作区",
+    paused: "已暂停",
+    listeningState: "监听中",
+    palette: "色盘",
+    colorWheelAria: "拖动选择噪声颜色",
+    currentColor: "当前颜色",
+    spectralTilt: "频谱倾向",
+    colorStrength: "染色强度",
+    listen: "监听",
+    startListening: "开始监听",
+    pauseListening: "暂停监听",
+    outputVolume: "输出音量",
+    resetWhite: "重置为白噪声",
+    randomColor: "随机颜色",
+    spectrum: "频谱",
+    spectrumCanvasAria: "当前噪声频谱预览",
+    mixLegendAria: "噪声混合比例",
+    saveAudio: "保存音频",
+    ready: "待生成",
+    duration: "时长",
+    unit: "单位",
+    seconds: "秒",
+    minutes: "分钟",
+    audioFormat: "音频格式",
+    sampleRate: "采样率",
+    filename: "文件名",
+    normalizeExport: "峰值归一化到 -1 dB",
+    generateDownload: "生成并下载",
+    downloadRecent: "下载最近生成的音频",
+    mixerAria: "噪声混音器",
+    feature2: "Feature 2",
+    mixerTitle: "噪声混音器",
+    bypassMixer: "旁路混音处理",
+    eqCurve: "EQ 曲线",
+    eqCanvasAria: "拖动 EQ 曲线控制点",
+    eqBandAria: "EQ 频段增益",
+    eqReset: "重置 EQ",
+    eqSmile: "微笑曲线",
+    eqWarm: "暖色低频",
+    effectsTitle: "混响与空间",
+    reverbMix: "混响量",
+    roomSize: "房间大小",
+    damping: "高频阻尼",
+    pan: "声像位置",
+    spatialWidth: "空间宽度",
+    spatialDelay: "空间延迟",
+    spaceReset: "重置空间",
+    spaceWide: "宽阔空间",
+    spaceNear: "近场干声",
+    whiteGrey: "白/灰",
+    tiltSuffix: "倾向",
+    center: "居中",
+    left: "左",
+    right: "右",
+    bypassed: "已旁路",
+    widthLabel: "宽度",
+    generating: "生成中",
+    encoding: "编码中",
+    generated: "已生成",
+    exportFailed: "生成失败",
+    startFailed: "启动失败",
+    downloadPrefix: "下载",
+    languageToggle: "EN",
+    languageAria: "Switch language to English",
+  },
+  en: {
+    appTitle: "Noise Colour Palette",
+    currentStatus: "Current status",
+    workspaceAria: "Noise colour palette workspace",
+    paused: "Paused",
+    listeningState: "Listening",
+    palette: "Palette",
+    colorWheelAria: "Drag to choose a noise colour",
+    currentColor: "Current colour",
+    spectralTilt: "Spectral tilt",
+    colorStrength: "Colour strength",
+    listen: "Monitor",
+    startListening: "Start monitor",
+    pauseListening: "Pause monitor",
+    outputVolume: "Output level",
+    resetWhite: "Reset to white noise",
+    randomColor: "Random colour",
+    spectrum: "Spectrum",
+    spectrumCanvasAria: "Current noise spectrum preview",
+    mixLegendAria: "Noise blend ratio",
+    saveAudio: "Save audio",
+    ready: "Ready",
+    duration: "Duration",
+    unit: "Unit",
+    seconds: "Seconds",
+    minutes: "Minutes",
+    audioFormat: "Audio format",
+    sampleRate: "Sample rate",
+    filename: "Filename",
+    normalizeExport: "Normalize peak to -1 dB",
+    generateDownload: "Generate and download",
+    downloadRecent: "Download the latest generated audio",
+    mixerAria: "Noise mixer",
+    feature2: "Feature 2",
+    mixerTitle: "Noise Mixer",
+    bypassMixer: "Bypass mixer processing",
+    eqCurve: "EQ Curve",
+    eqCanvasAria: "Drag EQ curve control points",
+    eqBandAria: "EQ band gain",
+    eqReset: "Reset EQ",
+    eqSmile: "Smile curve",
+    eqWarm: "Warm lows",
+    effectsTitle: "Reverb and Space",
+    reverbMix: "Reverb mix",
+    roomSize: "Room size",
+    damping: "HF damping",
+    pan: "Pan position",
+    spatialWidth: "Spatial width",
+    spatialDelay: "Spatial delay",
+    spaceReset: "Reset space",
+    spaceWide: "Wide space",
+    spaceNear: "Near dry",
+    whiteGrey: "White/Grey",
+    tiltSuffix: "tilt",
+    center: "Center",
+    left: "Left",
+    right: "Right",
+    bypassed: "Bypassed",
+    widthLabel: "Width",
+    generating: "Generating",
+    encoding: "Encoding",
+    generated: "Generated",
+    exportFailed: "Export failed",
+    startFailed: "Start failed",
+    downloadPrefix: "Download",
+    languageToggle: "中文",
+    languageAria: "切换到中文",
+  },
+};
+
 const dom = {
+  languageToggle: document.querySelector("#languageToggle"),
   colorWheel: document.querySelector("#colorWheel"),
   spectrumCanvas: document.querySelector("#spectrumCanvas"),
   playToggle: document.querySelector("#playToggle"),
@@ -73,6 +213,7 @@ const dom = {
 };
 
 const state = {
+  language: localStorage.getItem("noisePaletteLanguage") === "en" ? "en" : "zh",
   hue: 335,
   saturation: 0.75,
   mix: null,
@@ -83,6 +224,8 @@ const state = {
   eqDraggingIndex: null,
   eqSelectedIndex: 2,
   lastObjectUrl: null,
+  lastDownloadFilename: null,
+  exportStatusKey: "ready",
   mixer: {
     bypass: false,
     eq: EQ_BANDS.map(() => 0),
@@ -129,6 +272,39 @@ function gainToDb(gain) {
 
 function softLimit(sample) {
   return Math.tanh(sample * 1.08) / Math.tanh(1.08);
+}
+
+function t(key) {
+  return I18N[state.language]?.[key] || I18N.zh[key] || key;
+}
+
+function labelFor(item) {
+  if (!item) {
+    return "";
+  }
+  return state.language === "en" ? item.labelEn || item.labelZh || item.label : item.labelZh || item.label || item.labelEn;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = state.language === "en" ? "en" : "zh-CN";
+  document.title = t("appTitle");
+  dom.languageToggle.textContent = t("languageToggle");
+  dom.languageToggle.setAttribute("aria-label", t("languageAria"));
+
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+
+  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+    element.setAttribute("aria-label", t(element.dataset.i18nAria));
+  });
+
+  dom.exportState.textContent = t(state.exportStatusKey);
+  if (state.lastDownloadFilename) {
+    dom.downloadLink.textContent = `${t("downloadPrefix")} ${state.lastDownloadFilename}`;
+  }
+  updateAudioLabels();
+  renderAll();
 }
 
 function circularDistance(a, b) {
@@ -199,7 +375,7 @@ function mixFromColour(hue, saturation) {
 
 function dominantFromMix(mix) {
   if (mix.white >= 0.5) {
-    return { id: "white", label: "白/灰", color: "#f7f7f2" };
+    return { id: "white", labelZh: "白/灰", labelEn: "White/Grey", color: "#f7f7f2" };
   }
 
   let best = ANCHORS[0];
@@ -245,7 +421,9 @@ function updateReadouts() {
   dom.selectedHex.textContent = state.color.hex;
   dom.tiltValue.textContent = state.beta.toFixed(2);
   dom.saturationValue.textContent = `${saturation}%`;
-  dom.noiseName.textContent = `${state.dominant.label}倾向`;
+  dom.noiseName.textContent = state.language === "en"
+    ? `${labelFor(state.dominant)} ${t("tiltSuffix")}`
+    : `${labelFor(state.dominant)}${t("tiltSuffix")}`;
 }
 
 function drawColorWheel() {
@@ -436,16 +614,17 @@ function drawSpectrum() {
 }
 
 function updateLegend() {
+  const items = [
+    { id: "white", labelZh: "白/灰", labelEn: "White/Grey", color: "#c7ccc3" },
+    ...ANCHORS,
+  ];
+
   if (!dom.mixLegend.dataset.ready) {
-    const items = [
-      { id: "white", label: "白/灰", color: "#c7ccc3" },
-      ...ANCHORS,
-    ];
     dom.mixLegend.innerHTML = items
       .map(
         (item) => `
           <div class="legend-row" data-key="${item.id}">
-            <span>${item.label}</span>
+            <span data-legend-label="${item.id}">${labelFor(item)}</span>
             <span class="legend-bar"><span style="background:${item.color}"></span></span>
             <strong>0%</strong>
           </div>
@@ -458,6 +637,8 @@ function updateLegend() {
   dom.mixLegend.querySelectorAll(".legend-row").forEach((row) => {
     const key = row.dataset.key;
     const percent = Math.round((state.mix[key] || 0) * 100);
+    const item = items.find((entry) => entry.id === key);
+    row.querySelector("[data-legend-label]").textContent = labelFor(item);
     row.querySelector(".legend-bar span").style.width = `${percent}%`;
     row.querySelector("strong").textContent = `${percent}%`;
   });
@@ -620,9 +801,14 @@ function renderEqBandControls() {
 
 function formatPan(value) {
   if (Math.abs(value) < 0.01) {
-    return "居中";
+    return t("center");
   }
-  return value < 0 ? `左 ${Math.round(Math.abs(value) * 100)}` : `右 ${Math.round(value * 100)}`;
+  return value < 0 ? `${t("left")} ${Math.round(Math.abs(value) * 100)}` : `${t("right")} ${Math.round(value * 100)}`;
+}
+
+function updateAudioLabels() {
+  dom.playToggle.textContent = audio.isPlaying ? t("pauseListening") : t("startListening");
+  dom.audioState.textContent = audio.isPlaying ? t("listeningState") : t("paused");
 }
 
 function updateMixerReadouts() {
@@ -659,7 +845,7 @@ function updateMixerReadouts() {
   dom.widthValue.textContent = `${Math.round(state.mixer.width * 100)}%`;
   dom.spaceDelayControl.value = Math.round(state.mixer.spaceDelayMs);
   dom.spaceDelayValue.textContent = `${Math.round(state.mixer.spaceDelayMs)} ms`;
-  dom.spaceReadout.textContent = state.mixer.bypass ? "已旁路" : `宽度 ${Math.round(state.mixer.width * 100)}%`;
+  dom.spaceReadout.textContent = state.mixer.bypass ? t("bypassed") : `${t("widthLabel")} ${Math.round(state.mixer.width * 100)}%`;
 }
 
 function applyMixerSettings() {
@@ -1057,8 +1243,7 @@ async function togglePlayback() {
 
   audio.isPlaying = !audio.isPlaying;
   audio.targetVolume = audio.isPlaying ? Number(dom.volumeControl.value) / 100 : 0;
-  dom.playToggle.textContent = audio.isPlaying ? "暂停监听" : "开始监听";
-  dom.audioState.textContent = audio.isPlaying ? "监听中" : "已暂停";
+  updateAudioLabels();
 }
 
 function renderLiveAudio(event) {
@@ -1340,7 +1525,8 @@ async function exportAudio() {
   const level = Number(dom.volumeControl.value) / 100 || 0.36;
 
   dom.exportButton.disabled = true;
-  dom.exportState.textContent = "生成中";
+  state.exportStatusKey = "generating";
+  dom.exportState.textContent = t(state.exportStatusKey);
   dom.exportProgress.style.width = "0%";
   dom.downloadLink.hidden = true;
 
@@ -1362,7 +1548,8 @@ async function exportAudio() {
     normalizeSamples(samples);
   }
 
-  dom.exportState.textContent = "编码中";
+  state.exportStatusKey = "encoding";
+  dom.exportState.textContent = t(state.exportStatusKey);
   dom.exportProgress.style.width = "86%";
   await new Promise((resolve) => window.setTimeout(resolve, 0));
 
@@ -1379,14 +1566,22 @@ async function exportAudio() {
   dom.downloadLink.href = state.lastObjectUrl;
   dom.downloadLink.download = filename;
   dom.downloadLink.hidden = false;
-  dom.downloadLink.textContent = `下载 ${filename}`;
+  state.lastDownloadFilename = filename;
+  dom.downloadLink.textContent = `${t("downloadPrefix")} ${filename}`;
   dom.exportProgress.style.width = "100%";
-  dom.exportState.textContent = "已生成";
+  state.exportStatusKey = "generated";
+  dom.exportState.textContent = t(state.exportStatusKey);
   dom.downloadLink.click();
   dom.exportButton.disabled = false;
 }
 
 function bindEvents() {
+  dom.languageToggle.addEventListener("click", () => {
+    state.language = state.language === "zh" ? "en" : "zh";
+    localStorage.setItem("noisePaletteLanguage", state.language);
+    applyLanguage();
+  });
+
   dom.colorWheel.addEventListener("pointerdown", (event) => {
     state.dragging = true;
     dom.colorWheel.setPointerCapture(event.pointerId);
@@ -1425,7 +1620,7 @@ function bindEvents() {
 
   dom.playToggle.addEventListener("click", () => {
     togglePlayback().catch(() => {
-      dom.audioState.textContent = "启动失败";
+      dom.audioState.textContent = t("startFailed");
     });
   });
 
@@ -1441,7 +1636,8 @@ function bindEvents() {
 
   dom.exportButton.addEventListener("click", () => {
     exportAudio().catch((error) => {
-      dom.exportState.textContent = "生成失败";
+      state.exportStatusKey = "exportFailed";
+      dom.exportState.textContent = t(state.exportStatusKey);
       dom.exportButton.disabled = false;
       console.error(error);
     });
@@ -1564,6 +1760,7 @@ function init() {
   setVolumeFromInput();
   bindEvents();
   updateStateFromColour(state.hue, state.saturation);
+  applyLanguage();
   updateMeter();
 }
 

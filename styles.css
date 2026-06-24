@@ -136,6 +136,17 @@ h2 {
   background: var(--accent-soft);
 }
 
+.language-toggle {
+  min-height: 28px;
+  border-color: var(--line);
+  border-radius: 999px;
+  padding: 0 11px;
+  color: var(--accent-strong);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(320px, 0.95fr) minmax(300px, 0.8fr) minmax(380px, 1.2fr);

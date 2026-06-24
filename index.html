@@ -12,18 +12,19 @@
       <header class="app-header">
         <div>
           <p class="eyebrow">Noise Colour Palette</p>
-          <h1>噪声调色盘</h1>
+          <h1 data-i18n="appTitle">噪声调色盘</h1>
         </div>
-        <div class="status-strip" aria-label="当前状态">
-          <span id="audioState" class="status-pill">已暂停</span>
+        <div class="status-strip" aria-label="当前状态" data-i18n-aria="currentStatus">
+          <button id="languageToggle" class="language-toggle" type="button" aria-label="Switch language">EN</button>
+          <span id="audioState" class="status-pill" data-i18n="paused">已暂停</span>
           <span id="noiseName" class="status-pill accent">粉红倾向</span>
         </div>
       </header>
 
-      <section class="workspace" aria-label="噪声调色盘工作区">
+      <section class="workspace" aria-label="噪声调色盘工作区" data-i18n-aria="workspaceAria">
         <section class="panel palette-panel" aria-labelledby="paletteTitle">
           <div class="panel-heading">
-            <h2 id="paletteTitle">色盘</h2>
+            <h2 id="paletteTitle" data-i18n="palette">色盘</h2>
             <span id="colourValue" class="metric">H 335 / S 75%</span>
           </div>
           <div class="wheel-wrap">
@@ -34,19 +35,20 @@
               height="360"
               tabindex="0"
               aria-label="拖动选择噪声颜色"
+              data-i18n-aria="colorWheelAria"
             ></canvas>
           </div>
           <div class="readout-grid">
             <div>
-              <span class="readout-label">当前颜色</span>
+              <span class="readout-label" data-i18n="currentColor">当前颜色</span>
               <span class="swatch-row"><span id="selectedSwatch" class="swatch"></span><strong id="selectedHex">#E66E9B</strong></span>
             </div>
             <div>
-              <span class="readout-label">频谱倾向</span>
+              <span class="readout-label" data-i18n="spectralTilt">频谱倾向</span>
               <strong id="tiltValue">-0.94</strong>
             </div>
             <div>
-              <span class="readout-label">染色强度</span>
+              <span class="readout-label" data-i18n="colorStrength">染色强度</span>
               <strong id="saturationValue">75%</strong>
             </div>
           </div>
@@ -54,53 +56,53 @@
 
         <section class="panel listen-panel" aria-labelledby="listenTitle">
           <div class="panel-heading">
-            <h2 id="listenTitle">监听</h2>
+            <h2 id="listenTitle" data-i18n="listen">监听</h2>
             <span id="meterValue" class="metric">0 dB</span>
           </div>
-          <button id="playToggle" class="primary-action" type="button">开始监听</button>
+          <button id="playToggle" class="primary-action" type="button" data-i18n="startListening">开始监听</button>
           <div class="meter" aria-hidden="true"><span id="levelMeter"></span></div>
 
           <label class="control-row">
-            <span>输出音量</span>
+            <span data-i18n="outputVolume">输出音量</span>
             <input id="volumeControl" type="range" min="0" max="100" value="36" />
             <strong id="volumeValue">36%</strong>
           </label>
 
           <div class="button-row">
-            <button id="resetButton" type="button">重置为白噪声</button>
-            <button id="randomButton" type="button">随机颜色</button>
+            <button id="resetButton" type="button" data-i18n="resetWhite">重置为白噪声</button>
+            <button id="randomButton" type="button" data-i18n="randomColor">随机颜色</button>
           </div>
         </section>
 
         <section class="panel spectrum-panel" aria-labelledby="spectrumTitle">
           <div class="panel-heading">
-            <h2 id="spectrumTitle">频谱</h2>
+            <h2 id="spectrumTitle" data-i18n="spectrum">频谱</h2>
             <span class="metric">20 Hz - 20 kHz</span>
           </div>
-          <canvas id="spectrumCanvas" class="spectrum-canvas" width="720" height="300" aria-label="当前噪声频谱预览"></canvas>
-          <div id="mixLegend" class="mix-legend" aria-label="噪声混合比例"></div>
+          <canvas id="spectrumCanvas" class="spectrum-canvas" width="720" height="300" aria-label="当前噪声频谱预览" data-i18n-aria="spectrumCanvasAria"></canvas>
+          <div id="mixLegend" class="mix-legend" aria-label="噪声混合比例" data-i18n-aria="mixLegendAria"></div>
         </section>
 
         <section class="panel export-panel" aria-labelledby="exportTitle">
           <div class="panel-heading">
-            <h2 id="exportTitle">保存音频</h2>
-            <span id="exportState" class="metric">待生成</span>
+            <h2 id="exportTitle" data-i18n="saveAudio">保存音频</h2>
+            <span id="exportState" class="metric" data-i18n="ready">待生成</span>
           </div>
 
           <div class="form-grid">
             <label>
-              <span>时长</span>
+              <span data-i18n="duration">时长</span>
               <input id="durationInput" type="number" min="1" max="600" step="1" value="30" />
             </label>
             <label>
-              <span>单位</span>
+              <span data-i18n="unit">单位</span>
               <select id="durationUnit">
-                <option value="seconds">秒</option>
-                <option value="minutes">分钟</option>
+                <option value="seconds" data-i18n="seconds">秒</option>
+                <option value="minutes" data-i18n="minutes">分钟</option>
               </select>
             </label>
             <label>
-              <span>音频格式</span>
+              <span data-i18n="audioFormat">音频格式</span>
               <select id="formatSelect">
                 <option value="wav16">WAV 16-bit PCM</option>
                 <option value="wav32">WAV 32-bit Float</option>
@@ -109,7 +111,7 @@
               </select>
             </label>
             <label>
-              <span>采样率</span>
+              <span data-i18n="sampleRate">采样率</span>
               <select id="sampleRateSelect">
                 <option value="44100">44.1 kHz</option>
                 <option value="48000">48 kHz</option>
@@ -118,91 +120,91 @@
           </div>
 
           <label class="filename-row">
-            <span>文件名</span>
+            <span data-i18n="filename">文件名</span>
             <input id="filenameInput" type="text" value="noise-colour" maxlength="80" />
           </label>
 
           <label class="check-row">
             <input id="normalizeExport" type="checkbox" checked />
-            <span>峰值归一化到 -1 dB</span>
+            <span data-i18n="normalizeExport">峰值归一化到 -1 dB</span>
           </label>
 
-          <button id="exportButton" class="primary-action" type="button">生成并下载</button>
+          <button id="exportButton" class="primary-action" type="button" data-i18n="generateDownload">生成并下载</button>
           <div class="progress" aria-hidden="true"><span id="exportProgress"></span></div>
-          <a id="downloadLink" class="download-link" href="#" download hidden>下载最近生成的音频</a>
+          <a id="downloadLink" class="download-link" href="#" download hidden data-i18n="downloadRecent">下载最近生成的音频</a>
         </section>
       </section>
 
-      <section class="mixer-section" aria-label="噪声混音器">
+      <section class="mixer-section" aria-label="噪声混音器" data-i18n-aria="mixerAria">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Feature 2</p>
-            <h2>噪声混音器</h2>
+            <p class="eyebrow" data-i18n="feature2">Feature 2</p>
+            <h2 data-i18n="mixerTitle">噪声混音器</h2>
           </div>
           <label class="switch-row">
             <input id="mixerBypass" type="checkbox" />
-            <span>旁路混音处理</span>
+            <span data-i18n="bypassMixer">旁路混音处理</span>
           </label>
         </div>
 
         <section class="mixer-grid">
           <section class="panel eq-panel" aria-labelledby="eqTitle">
             <div class="panel-heading">
-              <h2 id="eqTitle">EQ 曲线</h2>
+              <h2 id="eqTitle" data-i18n="eqCurve">EQ 曲线</h2>
               <span id="eqReadout" class="metric">1 kHz / 0 dB</span>
             </div>
-            <canvas id="eqCanvas" class="eq-canvas" width="820" height="320" tabindex="0" aria-label="拖动 EQ 曲线控制点"></canvas>
-            <div id="eqBandControls" class="eq-band-grid" aria-label="EQ 频段增益"></div>
+            <canvas id="eqCanvas" class="eq-canvas" width="820" height="320" tabindex="0" aria-label="拖动 EQ 曲线控制点" data-i18n-aria="eqCanvasAria"></canvas>
+            <div id="eqBandControls" class="eq-band-grid" aria-label="EQ 频段增益" data-i18n-aria="eqBandAria"></div>
             <div class="button-row">
-              <button id="eqResetButton" type="button">重置 EQ</button>
-              <button id="eqSmileButton" type="button">微笑曲线</button>
-              <button id="eqWarmButton" type="button">暖色低频</button>
+              <button id="eqResetButton" type="button" data-i18n="eqReset">重置 EQ</button>
+              <button id="eqSmileButton" type="button" data-i18n="eqSmile">微笑曲线</button>
+              <button id="eqWarmButton" type="button" data-i18n="eqWarm">暖色低频</button>
             </div>
           </section>
 
           <section class="panel effects-panel" aria-labelledby="effectsTitle">
             <div class="panel-heading">
-              <h2 id="effectsTitle">混响与空间</h2>
+              <h2 id="effectsTitle" data-i18n="effectsTitle">混响与空间</h2>
               <span id="spaceReadout" class="metric">宽度 100%</span>
             </div>
 
             <div class="control-stack">
               <label class="control-row">
-                <span>混响量</span>
+                <span data-i18n="reverbMix">混响量</span>
                 <input id="reverbMixControl" type="range" min="0" max="100" value="18" />
                 <strong id="reverbMixValue">18%</strong>
               </label>
               <label class="control-row">
-                <span>房间大小</span>
+                <span data-i18n="roomSize">房间大小</span>
                 <input id="reverbSizeControl" type="range" min="0" max="100" value="46" />
                 <strong id="reverbSizeValue">46%</strong>
               </label>
               <label class="control-row">
-                <span>高频阻尼</span>
+                <span data-i18n="damping">高频阻尼</span>
                 <input id="reverbDampingControl" type="range" min="0" max="100" value="42" />
                 <strong id="reverbDampingValue">42%</strong>
               </label>
               <label class="control-row">
-                <span>声像位置</span>
+                <span data-i18n="pan">声像位置</span>
                 <input id="panControl" type="range" min="-100" max="100" value="0" />
                 <strong id="panValue">居中</strong>
               </label>
               <label class="control-row">
-                <span>空间宽度</span>
+                <span data-i18n="spatialWidth">空间宽度</span>
                 <input id="widthControl" type="range" min="0" max="200" value="100" />
                 <strong id="widthValue">100%</strong>
               </label>
               <label class="control-row">
-                <span>空间延迟</span>
+                <span data-i18n="spatialDelay">空间延迟</span>
                 <input id="spaceDelayControl" type="range" min="0" max="35" value="14" />
                 <strong id="spaceDelayValue">14 ms</strong>
               </label>
             </div>
 
             <div class="button-row">
-              <button id="spaceResetButton" type="button">重置空间</button>
-              <button id="spaceWideButton" type="button">宽阔空间</button>
-              <button id="spaceNearButton" type="button">近场干声</button>
+              <button id="spaceResetButton" type="button" data-i18n="spaceReset">重置空间</button>
+              <button id="spaceWideButton" type="button" data-i18n="spaceWide">宽阔空间</button>
+              <button id="spaceNearButton" type="button" data-i18n="spaceNear">近场干声</button>
             </div>
           </section>
         </section>
