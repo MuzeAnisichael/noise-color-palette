@@ -8,7 +8,7 @@ A dependency-free browser app for noise synthesis and mixing. It turns noise col
 
 - Drag the palette to shape the current noise colour.
 - The center stays close to white/grey noise; stronger spectral colouring appears toward the edge.
-- Built-in brown/red, pink, yellow low-mid, green mid, cyan presence, blue bright, and violet air anchors.
+- Built-in brown/red, red-violet scoop, yellow low-mid, green focus, cyan presence, blue bright, and violet air anchors.
 - Chinese/English UI switching, persisted with `localStorage`.
 - Real-time spectrum curve and spectrum-shaping metrics.
 - Independent mixer: 5-band EQ curve, reverb, pan, spatial width, and spatial delay.
@@ -49,10 +49,11 @@ http://localhost:5173/
 
 This project uses a designed, explainable mapping. It does not claim a physical one-to-one relationship between visible colour and audio spectrum.
 
-- Hue controls both the overall spectral tilt and the main-band center frequency.
+- Hue controls the overall spectral tilt, main-band center frequency, and the mid-scoop depth in the red-violet region.
 - Saturation controls the strength of the transition from white noise to the target spectrum.
 - The center keeps more white/grey noise weight.
-- Yellow and green regions generate explicit low-mid and midrange emphasis, avoiding the persistent midrange dip caused by mixing low-frequency and high-frequency anchors.
+- Yellow keeps a low-mid emphasis, while green now creates a narrower, stronger midrange peak with comparatively weaker low and high extremes.
+- The red-violet transition scoops the midrange and reinforces low plus high edges, combining red low-frequency weight with violet air.
 - The spectrum preview reflects the theoretical result of the current target spectrum and EQ curve.
 
 ## Export Notes

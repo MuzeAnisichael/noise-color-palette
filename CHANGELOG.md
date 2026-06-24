@@ -4,6 +4,8 @@
 
 - Replaced anchor-weight noise blending with a target-spectrum palette algorithm.
 - Added yellow low-mid, green mid, and cyan presence anchors to improve midrange control.
+- Made green a stronger, narrower midrange focus with weaker low and high extremes.
+- Changed the red-violet transition into a midrange scoop that reinforces low and high edges.
 - Added Chinese/English UI switching.
 - Added bilingual README navigation.
 - Added GitHub Actions static check and repository templates.

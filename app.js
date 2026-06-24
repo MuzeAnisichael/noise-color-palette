@@ -1,14 +1,17 @@
 "use strict";
 
 const ANCHORS = [
-  { id: "brown", labelZh: "棕/红", labelEn: "Brown/Red", hue: 18, beta: -1.85, centerFrequency: 95, bandGainDb: 7.5, bandWidth: 0.9, color: "#99542d" },
-  { id: "yellow", labelZh: "黄色中低", labelEn: "Yellow Low-Mid", hue: 62, beta: -0.38, centerFrequency: 420, bandGainDb: 7.2, bandWidth: 0.86, color: "#c39a28" },
-  { id: "green", labelZh: "绿色中频", labelEn: "Green Mid", hue: 122, beta: 0, centerFrequency: 1150, bandGainDb: 10.5, bandWidth: 0.72, color: "#37a46d" },
-  { id: "cyan", labelZh: "青色存在感", labelEn: "Cyan Presence", hue: 178, beta: 0.28, centerFrequency: 2600, bandGainDb: 8.2, bandWidth: 0.78, color: "#2a9a9a" },
-  { id: "blue", labelZh: "蓝色明亮", labelEn: "Blue Bright", hue: 222, beta: 0.9, centerFrequency: 5200, bandGainDb: 7.4, bandWidth: 0.82, color: "#2f82c6" },
-  { id: "violet", labelZh: "紫色空气感", labelEn: "Violet Air", hue: 282, beta: 1.7, centerFrequency: 11200, bandGainDb: 6.8, bandWidth: 0.92, color: "#7d57bd" },
-  { id: "pink", labelZh: "粉红柔和", labelEn: "Pink Soft", hue: 335, beta: -0.86, centerFrequency: 560, bandGainDb: 4.8, bandWidth: 1.08, color: "#e66e9b" },
+  { id: "brown", labelZh: "棕/红", labelEn: "Brown/Red", hue: 18, beta: -1.85, centerFrequency: 95, bandGainDb: 7.5, bandWidth: 0.9, notchFrequency: 1150, notchCutDb: 0, notchWidth: 0.9, edgeGainDb: 0, color: "#99542d" },
+  { id: "yellow", labelZh: "黄色中低", labelEn: "Yellow Low-Mid", hue: 62, beta: -0.38, centerFrequency: 420, bandGainDb: 7.2, bandWidth: 0.86, notchFrequency: 1150, notchCutDb: 0, notchWidth: 0.9, edgeGainDb: 0, color: "#c39a28" },
+  { id: "green", labelZh: "绿色强中频", labelEn: "Green Focus", hue: 122, beta: 0, centerFrequency: 1180, bandGainDb: 16.2, bandWidth: 0.5, notchFrequency: 1150, notchCutDb: 0, notchWidth: 0.9, edgeGainDb: 0, color: "#37a46d" },
+  { id: "cyan", labelZh: "青色存在感", labelEn: "Cyan Presence", hue: 178, beta: 0.28, centerFrequency: 2600, bandGainDb: 8.2, bandWidth: 0.78, notchFrequency: 1150, notchCutDb: 0, notchWidth: 0.9, edgeGainDb: 0, color: "#2a9a9a" },
+  { id: "blue", labelZh: "蓝色明亮", labelEn: "Blue Bright", hue: 222, beta: 0.9, centerFrequency: 5200, bandGainDb: 7.4, bandWidth: 0.82, notchFrequency: 1150, notchCutDb: 0, notchWidth: 0.9, edgeGainDb: 0, color: "#2f82c6" },
+  { id: "violet", labelZh: "紫色空气感", labelEn: "Violet Air", hue: 282, beta: 1.7, centerFrequency: 11200, bandGainDb: 6.8, bandWidth: 0.92, notchFrequency: 1150, notchCutDb: 0, notchWidth: 0.9, edgeGainDb: 0, color: "#7d57bd" },
+  { id: "red-violet", labelZh: "红紫凹陷", labelEn: "Red-Violet Scoop", hue: 335, beta: -0.05, centerFrequency: 1150, bandGainDb: 0.6, bandWidth: 0.95, notchFrequency: 1150, notchCutDb: 15.5, notchWidth: 0.82, edgeGainDb: 7.8, color: "#d85aa5" },
 ];
+
+const MAX_FOCUS_GAIN_DB = 16.5;
+const MAX_SCOOP_CUT_DB = 16;
 
 const EQ_BANDS = [
   { id: "sub", label: "80 Hz", frequency: 80, type: "lowshelf", q: 0.7 },
@@ -18,7 +21,7 @@ const EQ_BANDS = [
   { id: "air", label: "12 kHz", frequency: 12000, type: "highshelf", q: 0.7 },
 ];
 
-const MIX_KEYS = ["strength", "beta", "centerFrequency", "bandGainDb", "bandWidth"];
+const MIX_KEYS = ["strength", "beta", "centerFrequency", "bandGainDb", "bandWidth", "notchFrequency", "notchCutDb", "notchWidth", "edgeGainDb"];
 const root = document.documentElement;
 
 const I18N = {
@@ -262,9 +265,14 @@ function createEmptyMix() {
     centerFrequency: 1000,
     bandGainDb: 0,
     bandWidth: 0.85,
+    notchFrequency: 1150,
+    notchCutDb: 0,
+    notchWidth: 0.9,
+    edgeGainDb: 0,
     foundation: 1,
     tiltAmount: 0,
     bandAmount: 0,
+    scoopAmount: 0,
   };
 }
 
@@ -365,6 +373,10 @@ function mixFromColour(hue, saturation) {
   const logCenter = lerp(Math.log2(pair.from.centerFrequency), Math.log2(pair.to.centerFrequency), t);
   const bandGainDb = lerp(pair.from.bandGainDb, pair.to.bandGainDb, t);
   const bandWidth = lerp(pair.from.bandWidth, pair.to.bandWidth, t);
+  const logNotch = lerp(Math.log2(pair.from.notchFrequency), Math.log2(pair.to.notchFrequency), t);
+  const notchCutDb = lerp(pair.from.notchCutDb, pair.to.notchCutDb, t);
+  const notchWidth = lerp(pair.from.notchWidth, pair.to.notchWidth, t);
+  const edgeGainDb = lerp(pair.from.edgeGainDb, pair.to.edgeGainDb, t);
   const dominant = strength < 0.28
     ? { id: "white", labelZh: "白/灰", labelEn: "White/Grey", color: "#f7f7f2" }
     : pair.t <= 0.5 ? pair.from : pair.to;
@@ -376,9 +388,14 @@ function mixFromColour(hue, saturation) {
     centerFrequency: Math.pow(2, logCenter),
     bandGainDb,
     bandWidth,
+    notchFrequency: Math.pow(2, logNotch),
+    notchCutDb,
+    notchWidth,
+    edgeGainDb,
     foundation: 1 - strength,
     tiltAmount: clamp(Math.abs(beta) * strength / 1.9, 0, 1),
-    bandAmount: clamp((bandGainDb * strength) / 10.5, 0, 1),
+    bandAmount: clamp((bandGainDb * strength) / MAX_FOCUS_GAIN_DB, 0, 1),
+    scoopAmount: clamp((notchCutDb * strength) / MAX_SCOOP_CUT_DB, 0, 1),
   };
 
   return { mix, beta: mix.effectiveBeta, dominant };
@@ -519,7 +536,13 @@ function spectrumPowerAt(frequency, mix) {
   const bandWidth = clamp(mix.bandWidth || 0.85, 0.45, 1.5);
   const bandShape = Math.exp(-(bandDistance * bandDistance) / (2 * bandWidth * bandWidth));
   const bandPower = Math.pow(10, ((mix.bandGainDb || 0) * bandShape) / 10);
-  const colouredPower = tiltPower * bandPower;
+  const notchDistance = Math.log2(frequency / clamp(mix.notchFrequency || 1150, 80, 8000));
+  const notchWidth = clamp(mix.notchWidth || 0.9, 0.45, 1.6);
+  const notchShape = Math.exp(-(notchDistance * notchDistance) / (2 * notchWidth * notchWidth));
+  const notchPower = Math.pow(10, (-(mix.notchCutDb || 0) * notchShape) / 10);
+  const edgeShape = 1 - Math.exp(-(notchDistance * notchDistance) / (2 * 1.55 * 1.55));
+  const edgePower = Math.pow(10, ((mix.edgeGainDb || 0) * edgeShape) / 10);
+  const colouredPower = tiltPower * bandPower * notchPower * edgePower;
   const basePower = (1 - strength) + strength * colouredPower;
 
   if (state.mixer?.bypass) {
@@ -631,6 +654,7 @@ function updateLegend() {
     { id: "foundation", labelZh: "白噪基础", labelEn: "White Base", color: "#c7ccc3" },
     { id: "tilt", labelZh: "频谱斜率", labelEn: "Spectral Tilt", color: "#99542d" },
     { id: "band", labelZh: "主频带", labelEn: "Focus Band", color: state.dominant?.color || "#37a46d" },
+    { id: "scoop", labelZh: "中频凹陷", labelEn: "Mid Scoop", color: "#d85aa5" },
     { id: "strength", labelZh: "染色强度", labelEn: "Colour Depth", color: "#2f8c67" },
   ];
 
@@ -679,8 +703,15 @@ function legendMetricFor(key) {
     return { width: value, text: `${beta > 0 ? "+" : ""}${beta.toFixed(2)}β` };
   }
   if (key === "band") {
-    const value = clamp(Math.round((state.mix.bandGainDb || 0) * (state.mix.strength || 0) / 10.5 * 100), 0, 100);
+    const value = clamp(Math.round((state.mix.bandGainDb || 0) * (state.mix.strength || 0) / MAX_FOCUS_GAIN_DB * 100), 0, 100);
     return { width: value, text: formatFrequency(state.mix.centerFrequency || 1000) };
+  }
+  if (key === "scoop") {
+    const cut = (state.mix.notchCutDb || 0) * (state.mix.strength || 0);
+    const edge = (state.mix.edgeGainDb || 0) * (state.mix.strength || 0);
+    const value = clamp(Math.round(cut / MAX_SCOOP_CUT_DB * 100), 0, 100);
+    const text = cut > 0.05 ? `-${Math.round(cut)}/+${Math.round(edge)} dB` : "0 dB";
+    return { width: value, text };
   }
   const value = Math.round((state.mix.strength || 0) * 100);
   return { width: value, text: `${value}%` };
@@ -1027,6 +1058,7 @@ class NoiseGenerator {
     this.sampleRate = sampleRate;
     this.random = createPrng(seed);
     this.colourBand = new DynamicBandPass(sampleRate);
+    this.scoopBand = new DynamicBandPass(sampleRate);
     this.pinkB0 = 0;
     this.pinkB1 = 0;
     this.pinkB2 = 0;
@@ -1115,9 +1147,18 @@ class NoiseGenerator {
       mix.centerFrequency || 1000,
       mix.bandWidth || 0.85,
     );
+    const scoopSample = this.scoopBand.process(
+      bases.rawWhite,
+      mix.notchFrequency || 1150,
+      mix.notchWidth || 0.9,
+    );
+    const focusAmount = clamp((mix.bandGainDb || 0) * strength / MAX_FOCUS_GAIN_DB, 0, 1);
+    const scoopAmount = clamp((mix.notchCutDb || 0) * strength / MAX_SCOOP_CUT_DB, 0, 1);
     const bandBoost = Math.max(0, dbToGain((mix.bandGainDb || 0) * strength) - 1) * 0.42;
-    const dryTrim = 1 - strength * 0.18;
-    const sample = tiltSample * dryTrim + bandSample * bandBoost;
+    const edgeBoost = Math.max(0, dbToGain((mix.edgeGainDb || 0) * strength) - 1) * 0.26;
+    const edgeSample = bases.brown * 0.46 + bases.violet * 0.36 + bases.blue * 0.18;
+    const dryTrim = clamp(1 - strength * 0.12 - focusAmount * 0.22 - scoopAmount * 0.14, 0.48, 1);
+    const sample = tiltSample * dryTrim + bandSample * bandBoost - scoopSample * scoopAmount * 1.05 + edgeSample * edgeBoost;
 
     return Math.tanh(sample * 0.9) * 0.76;
   }
