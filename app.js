@@ -1,11 +1,13 @@
 "use strict";
 
 const ANCHORS = [
-  { id: "brown", labelZh: "棕/红", labelEn: "Brown/Red", hue: 20, beta: -2, color: "#99542d" },
-  { id: "pink", labelZh: "粉红", labelEn: "Pink", hue: 335, beta: -1, color: "#e66e9b" },
-  { id: "green", labelZh: "绿色", labelEn: "Green", hue: 120, beta: 0, color: "#37a46d" },
-  { id: "blue", labelZh: "蓝色", labelEn: "Blue", hue: 218, beta: 1, color: "#2f82c6" },
-  { id: "violet", labelZh: "紫色", labelEn: "Violet", hue: 280, beta: 2, color: "#7d57bd" },
+  { id: "brown", labelZh: "棕/红", labelEn: "Brown/Red", hue: 18, beta: -1.85, centerFrequency: 95, bandGainDb: 7.5, bandWidth: 0.9, color: "#99542d" },
+  { id: "yellow", labelZh: "黄色中低", labelEn: "Yellow Low-Mid", hue: 62, beta: -0.38, centerFrequency: 420, bandGainDb: 7.2, bandWidth: 0.86, color: "#c39a28" },
+  { id: "green", labelZh: "绿色中频", labelEn: "Green Mid", hue: 122, beta: 0, centerFrequency: 1150, bandGainDb: 10.5, bandWidth: 0.72, color: "#37a46d" },
+  { id: "cyan", labelZh: "青色存在感", labelEn: "Cyan Presence", hue: 178, beta: 0.28, centerFrequency: 2600, bandGainDb: 8.2, bandWidth: 0.78, color: "#2a9a9a" },
+  { id: "blue", labelZh: "蓝色明亮", labelEn: "Blue Bright", hue: 222, beta: 0.9, centerFrequency: 5200, bandGainDb: 7.4, bandWidth: 0.82, color: "#2f82c6" },
+  { id: "violet", labelZh: "紫色空气感", labelEn: "Violet Air", hue: 282, beta: 1.7, centerFrequency: 11200, bandGainDb: 6.8, bandWidth: 0.92, color: "#7d57bd" },
+  { id: "pink", labelZh: "粉红柔和", labelEn: "Pink Soft", hue: 335, beta: -0.86, centerFrequency: 560, bandGainDb: 4.8, bandWidth: 1.08, color: "#e66e9b" },
 ];
 
 const EQ_BANDS = [
@@ -16,7 +18,7 @@ const EQ_BANDS = [
   { id: "air", label: "12 kHz", frequency: 12000, type: "highshelf", q: 0.7 },
 ];
 
-const MIX_KEYS = ["white", ...ANCHORS.map((anchor) => anchor.id)];
+const MIX_KEYS = ["strength", "beta", "centerFrequency", "bandGainDb", "bandWidth"];
 const root = document.documentElement;
 
 const I18N = {
@@ -39,7 +41,7 @@ const I18N = {
     randomColor: "随机颜色",
     spectrum: "频谱",
     spectrumCanvasAria: "当前噪声频谱预览",
-    mixLegendAria: "噪声混合比例",
+    mixLegendAria: "频谱塑形指标",
     saveAudio: "保存音频",
     ready: "待生成",
     duration: "时长",
@@ -107,7 +109,7 @@ const I18N = {
     randomColor: "Random colour",
     spectrum: "Spectrum",
     spectrumCanvasAria: "Current noise spectrum preview",
-    mixLegendAria: "Noise blend ratio",
+    mixLegendAria: "Spectrum shaping metrics",
     saveAudio: "Save audio",
     ready: "Ready",
     duration: "Duration",
@@ -252,10 +254,18 @@ const audio = {
 };
 
 function createEmptyMix() {
-  return MIX_KEYS.reduce((mix, key) => {
-    mix[key] = key === "white" ? 1 : 0;
-    return mix;
-  }, {});
+  return {
+    model: "spectral",
+    strength: 0,
+    beta: 0,
+    effectiveBeta: 0,
+    centerFrequency: 1000,
+    bandGainDb: 0,
+    bandWidth: 0.85,
+    foundation: 1,
+    tiltAmount: 0,
+    bandAmount: 0,
+  };
 }
 
 function clamp(value, min, max) {
@@ -264,10 +274,6 @@ function clamp(value, min, max) {
 
 function dbToGain(db) {
   return Math.pow(10, db / 20);
-}
-
-function gainToDb(gain) {
-  return 20 * Math.log10(Math.max(0.000001, gain));
 }
 
 function softLimit(sample) {
@@ -352,39 +358,48 @@ function rgbToHex([r, g, b]) {
 }
 
 function mixFromColour(hue, saturation) {
-  const colorWeight = Math.pow(saturation, 0.92);
-  const whiteWeight = 1 - colorWeight;
-  const spread = 48;
-  const raw = ANCHORS.map((anchor) => {
-    const distance = circularDistance(hue, anchor.hue);
-    return Math.exp(-(distance * distance) / (2 * spread * spread));
-  });
-  const rawSum = raw.reduce((sum, value) => sum + value, 0) || 1;
-  const mix = createEmptyMix();
+  const strength = Math.pow(saturation, 0.9);
+  const pair = anchorPairForHue(hue);
+  const t = pair.t * pair.t * (3 - 2 * pair.t);
+  const beta = lerp(pair.from.beta, pair.to.beta, t);
+  const logCenter = lerp(Math.log2(pair.from.centerFrequency), Math.log2(pair.to.centerFrequency), t);
+  const bandGainDb = lerp(pair.from.bandGainDb, pair.to.bandGainDb, t);
+  const bandWidth = lerp(pair.from.bandWidth, pair.to.bandWidth, t);
+  const dominant = strength < 0.28
+    ? { id: "white", labelZh: "白/灰", labelEn: "White/Grey", color: "#f7f7f2" }
+    : pair.t <= 0.5 ? pair.from : pair.to;
+  const mix = {
+    model: "spectral",
+    strength,
+    beta,
+    effectiveBeta: beta * strength,
+    centerFrequency: Math.pow(2, logCenter),
+    bandGainDb,
+    bandWidth,
+    foundation: 1 - strength,
+    tiltAmount: clamp(Math.abs(beta) * strength / 1.9, 0, 1),
+    bandAmount: clamp((bandGainDb * strength) / 10.5, 0, 1),
+  };
 
-  mix.white = whiteWeight;
-  ANCHORS.forEach((anchor, index) => {
-    mix[anchor.id] = (raw[index] / rawSum) * colorWeight;
-  });
-
-  const beta = ANCHORS.reduce((sum, anchor) => sum + mix[anchor.id] * anchor.beta, 0);
-  const dominant = dominantFromMix(mix);
-
-  return { mix, beta, dominant };
+  return { mix, beta: mix.effectiveBeta, dominant };
 }
 
-function dominantFromMix(mix) {
-  if (mix.white >= 0.5) {
-    return { id: "white", labelZh: "白/灰", labelEn: "White/Grey", color: "#f7f7f2" };
-  }
+function lerp(from, to, amount) {
+  return from + (to - from) * amount;
+}
 
-  let best = ANCHORS[0];
-  for (const anchor of ANCHORS) {
-    if (mix[anchor.id] > mix[best.id]) {
-      best = anchor;
+function anchorPairForHue(hue) {
+  const sorted = [...ANCHORS].sort((a, b) => a.hue - b.hue);
+  for (let i = 0; i < sorted.length; i += 1) {
+    const from = sorted[i];
+    const to = sorted[(i + 1) % sorted.length];
+    const span = (to.hue - from.hue + 360) % 360 || 360;
+    const offset = (hue - from.hue + 360) % 360;
+    if (offset <= span) {
+      return { from, to, t: offset / span };
     }
   }
-  return best;
+  return { from: sorted[0], to: sorted[1], t: 0 };
 }
 
 function updateStateFromColour(hue, saturation) {
@@ -498,16 +513,14 @@ function drawColorWheel() {
 
 function spectrumPowerAt(frequency, mix) {
   const ratio = frequency / 1000;
-  const logBand = Math.log2(frequency / 720);
-  const greenBump = 0.12 + 1.8 * Math.exp(-(logBand * logBand) / (2 * 0.9 * 0.9));
-
-  const basePower =
-    mix.white * 1 +
-    mix.pink * Math.pow(ratio, -1) +
-    mix.brown * Math.pow(ratio, -2) +
-    mix.green * greenBump +
-    mix.blue * Math.pow(ratio, 1) +
-    mix.violet * Math.pow(ratio, 2);
+  const strength = clamp(mix.strength || 0, 0, 1);
+  const tiltPower = Math.pow(ratio, mix.beta || 0);
+  const bandDistance = Math.log2(frequency / clamp(mix.centerFrequency || 1000, 35, 16000));
+  const bandWidth = clamp(mix.bandWidth || 0.85, 0.45, 1.5);
+  const bandShape = Math.exp(-(bandDistance * bandDistance) / (2 * bandWidth * bandWidth));
+  const bandPower = Math.pow(10, ((mix.bandGainDb || 0) * bandShape) / 10);
+  const colouredPower = tiltPower * bandPower;
+  const basePower = (1 - strength) + strength * colouredPower;
 
   if (state.mixer?.bypass) {
     return basePower;
@@ -615,8 +628,10 @@ function drawSpectrum() {
 
 function updateLegend() {
   const items = [
-    { id: "white", labelZh: "白/灰", labelEn: "White/Grey", color: "#c7ccc3" },
-    ...ANCHORS,
+    { id: "foundation", labelZh: "白噪基础", labelEn: "White Base", color: "#c7ccc3" },
+    { id: "tilt", labelZh: "频谱斜率", labelEn: "Spectral Tilt", color: "#99542d" },
+    { id: "band", labelZh: "主频带", labelEn: "Focus Band", color: state.dominant?.color || "#37a46d" },
+    { id: "strength", labelZh: "染色强度", labelEn: "Colour Depth", color: "#2f8c67" },
   ];
 
   if (!dom.mixLegend.dataset.ready) {
@@ -636,12 +651,39 @@ function updateLegend() {
 
   dom.mixLegend.querySelectorAll(".legend-row").forEach((row) => {
     const key = row.dataset.key;
-    const percent = Math.round((state.mix[key] || 0) * 100);
     const item = items.find((entry) => entry.id === key);
+    const metrics = legendMetricFor(key);
     row.querySelector("[data-legend-label]").textContent = labelFor(item);
-    row.querySelector(".legend-bar span").style.width = `${percent}%`;
-    row.querySelector("strong").textContent = `${percent}%`;
+    row.querySelector(".legend-bar span").style.background = item.color;
+    row.querySelector(".legend-bar span").style.width = `${metrics.width}%`;
+    row.querySelector("strong").textContent = metrics.text;
   });
+}
+
+function formatFrequency(frequency) {
+  if (frequency >= 1000) {
+    const value = frequency / 1000;
+    return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} kHz`;
+  }
+  return `${Math.round(frequency)} Hz`;
+}
+
+function legendMetricFor(key) {
+  if (key === "foundation") {
+    const value = Math.round((1 - (state.mix.strength || 0)) * 100);
+    return { width: value, text: `${value}%` };
+  }
+  if (key === "tilt") {
+    const value = clamp(Math.round(Math.abs(state.mix.effectiveBeta || 0) / 1.9 * 100), 0, 100);
+    const beta = state.mix.effectiveBeta || 0;
+    return { width: value, text: `${beta > 0 ? "+" : ""}${beta.toFixed(2)}β` };
+  }
+  if (key === "band") {
+    const value = clamp(Math.round((state.mix.bandGainDb || 0) * (state.mix.strength || 0) / 10.5 * 100), 0, 100);
+    return { width: value, text: formatFrequency(state.mix.centerFrequency || 1000) };
+  }
+  const value = Math.round((state.mix.strength || 0) * 100);
+  return { width: value, text: `${value}%` };
 }
 
 function eqGainAtFrequency(frequency, gains = state.mixer.eq) {
@@ -936,10 +978,55 @@ function createPrng(seed) {
   };
 }
 
+class DynamicBandPass {
+  constructor(sampleRate) {
+    this.sampleRate = sampleRate;
+    this.lastFrequency = 0;
+    this.lastWidth = 0;
+    this.x1 = 0;
+    this.x2 = 0;
+    this.y1 = 0;
+    this.y2 = 0;
+    this.updateCoefficients(1000, 0.85);
+  }
+
+  updateCoefficients(frequency, width) {
+    const safeFrequency = clamp(frequency, 35, this.sampleRate * 0.42);
+    const safeWidth = clamp(width, 0.45, 1.5);
+    if (Math.abs(safeFrequency - this.lastFrequency) < 1 && Math.abs(safeWidth - this.lastWidth) < 0.01) {
+      return;
+    }
+
+    this.lastFrequency = safeFrequency;
+    this.lastWidth = safeWidth;
+    const q = clamp(1.25 / safeWidth, 0.55, 3.2);
+    const w0 = (2 * Math.PI * safeFrequency) / this.sampleRate;
+    const alpha = Math.sin(w0) / (2 * q);
+    const a0 = 1 + alpha;
+
+    this.b0 = alpha / a0;
+    this.b1 = 0;
+    this.b2 = -alpha / a0;
+    this.a1 = (-2 * Math.cos(w0)) / a0;
+    this.a2 = (1 - alpha) / a0;
+  }
+
+  process(sample, frequency, width) {
+    this.updateCoefficients(frequency, width);
+    const output = this.b0 * sample + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
+    this.x2 = this.x1;
+    this.x1 = sample;
+    this.y2 = this.y1;
+    this.y1 = output;
+    return output;
+  }
+}
+
 class NoiseGenerator {
   constructor(sampleRate, seed = Date.now()) {
     this.sampleRate = sampleRate;
     this.random = createPrng(seed);
+    this.colourBand = new DynamicBandPass(sampleRate);
     this.pinkB0 = 0;
     this.pinkB1 = 0;
     this.pinkB2 = 0;
@@ -995,6 +1082,7 @@ class NoiseGenerator {
     this.lastWhite = white;
 
     return {
+      rawWhite: white,
       white: white * 0.72,
       pink,
       brown,
@@ -1006,10 +1094,31 @@ class NoiseGenerator {
 
   nextSample(mix) {
     const bases = this.nextBases();
-    let sample = 0;
-    for (const key of MIX_KEYS) {
-      sample += (mix[key] || 0) * bases[key];
+    const strength = clamp(mix.strength || 0, 0, 1);
+    const effectiveBeta = clamp((mix.beta || 0) * strength, -2, 2);
+    let tiltSample = bases.white;
+
+    if (effectiveBeta < 0) {
+      const amount = -effectiveBeta;
+      tiltSample = amount <= 1
+        ? bases.white * (1 - amount) + bases.pink * amount
+        : bases.pink * (2 - amount) + bases.brown * (amount - 1);
+    } else if (effectiveBeta > 0) {
+      const amount = effectiveBeta;
+      tiltSample = amount <= 1
+        ? bases.white * (1 - amount) + bases.blue * amount
+        : bases.blue * (2 - amount) + bases.violet * (amount - 1);
     }
+
+    const bandSample = this.colourBand.process(
+      bases.rawWhite,
+      mix.centerFrequency || 1000,
+      mix.bandWidth || 0.85,
+    );
+    const bandBoost = Math.max(0, dbToGain((mix.bandGainDb || 0) * strength) - 1) * 0.42;
+    const dryTrim = 1 - strength * 0.18;
+    const sample = tiltSample * dryTrim + bandSample * bandBoost;
+
     return Math.tanh(sample * 0.9) * 0.76;
   }
 }
