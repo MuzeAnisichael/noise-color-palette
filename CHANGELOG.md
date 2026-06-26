@@ -6,6 +6,7 @@
 - Added yellow low-mid, green mid, and cyan presence anchors to improve midrange control.
 - Made green a stronger, narrower midrange focus with weaker low and high extremes.
 - Changed the red-violet transition into a midrange scoop that reinforces low and high edges.
+- Added audio noising for uploaded files using the current palette noise and mixer settings.
 - Added Chinese/English UI switching.
 - Added bilingual README navigation.
 - Added GitHub Actions static check and repository templates.

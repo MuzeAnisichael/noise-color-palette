@@ -209,6 +209,61 @@
           </section>
         </section>
       </section>
+
+      <section class="audio-noise-section" aria-label="音频噪化" data-i18n-aria="audioNoiseAria">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="feature3">Feature 3</p>
+            <h2 data-i18n="audioNoiseTitle">音频噪化</h2>
+          </div>
+          <span id="audioNoiseState" class="metric" data-i18n="noAudioFile">未选择音频</span>
+        </div>
+
+        <section class="audio-noise-grid">
+          <section class="panel audio-source-panel" aria-labelledby="sourceAudioTitle">
+            <div class="panel-heading">
+              <h2 id="sourceAudioTitle" data-i18n="sourceAudio">源音频</h2>
+              <span id="sourceDurationValue" class="metric">0:00</span>
+            </div>
+
+            <label class="file-row">
+              <span data-i18n="sourceFile">文件</span>
+              <input id="audioFileInput" type="file" accept="audio/*" />
+            </label>
+            <span id="sourceFileName" class="source-file-name" data-i18n="noAudioFile">未选择音频</span>
+
+            <div class="control-stack">
+              <label class="control-row">
+                <span data-i18n="sourceLevel">原音量</span>
+                <input id="sourceLevelControl" type="range" min="0" max="150" value="100" />
+                <strong id="sourceLevelValue">100%</strong>
+              </label>
+              <label class="control-row">
+                <span data-i18n="noiseLevel">噪声量</span>
+                <input id="noiseLevelControl" type="range" min="0" max="150" value="35" />
+                <strong id="noiseLevelValue">35%</strong>
+              </label>
+              <label class="control-row">
+                <span data-i18n="outputGain">输出增益</span>
+                <input id="noiseOutputGainControl" type="range" min="10" max="150" value="100" />
+                <strong id="noiseOutputGainValue">100%</strong>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel audio-render-panel" aria-labelledby="audioNoiseRenderTitle">
+            <div class="panel-heading">
+              <h2 id="audioNoiseRenderTitle" data-i18n="renderNoised">生成噪化音频</h2>
+              <span class="metric" data-i18n="audioFormat">音频格式</span>
+            </div>
+
+            <button id="renderNoisedButton" class="primary-action" type="button" data-i18n="renderNoised" disabled>生成噪化音频</button>
+            <div class="progress" aria-hidden="true"><span id="audioNoiseProgress"></span></div>
+            <audio id="noisedPreview" class="noised-preview" controls hidden aria-label="噪化音频预览" data-i18n-aria="noisedPreview"></audio>
+            <a id="noisedDownloadLink" class="download-link" href="#" download hidden data-i18n="downloadNoisedRecent">下载最近噪化音频</a>
+          </section>
+        </section>
+      </section>
     </main>
 
     <script src="app.js"></script>

@@ -158,6 +158,10 @@ h2 {
   margin-top: 18px;
 }
 
+.audio-noise-section {
+  margin-top: 18px;
+}
+
 .section-heading {
   display: flex;
   align-items: flex-end;
@@ -169,6 +173,12 @@ h2 {
 .mixer-grid {
   display: grid;
   grid-template-columns: minmax(460px, 1.45fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+
+.audio-noise-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.85fr) minmax(460px, 1.15fr);
   gap: 16px;
 }
 
@@ -254,7 +264,9 @@ h2 {
 }
 
 .eq-panel,
-.effects-panel {
+.effects-panel,
+.audio-source-panel,
+.audio-render-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -410,14 +422,37 @@ h2 {
 }
 
 .form-grid label,
-.filename-row {
+.filename-row,
+.file-row {
   color: var(--muted);
   font-size: 14px;
 }
 
-.form-grid label {
+.form-grid label,
+.file-row {
   display: grid;
   gap: 7px;
+}
+
+.file-row input[type="file"] {
+  min-width: 0;
+  width: 100%;
+  padding: 8px 12px;
+}
+
+.source-file-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noised-preview {
+  width: 100%;
+  min-height: 42px;
 }
 
 .filename-row {
@@ -447,6 +482,10 @@ h2 {
   }
 
   .mixer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audio-noise-grid {
     grid-template-columns: 1fr;
   }
 
@@ -481,6 +520,10 @@ h2 {
   }
 
   .mixer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audio-noise-grid {
     grid-template-columns: 1fr;
   }
 

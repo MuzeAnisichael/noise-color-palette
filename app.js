@@ -57,6 +57,25 @@ const I18N = {
     normalizeExport: "峰值归一化到 -1 dB",
     generateDownload: "生成并下载",
     downloadRecent: "下载最近生成的音频",
+    audioNoiseAria: "音频噪化",
+    feature3: "Feature 3",
+    audioNoiseTitle: "音频噪化",
+    sourceAudio: "源音频",
+    sourceFile: "文件",
+    sourceDuration: "时长",
+    sourceLevel: "原音量",
+    noiseLevel: "噪声量",
+    outputGain: "输出增益",
+    renderNoised: "生成噪化音频",
+    noAudioFile: "未选择音频",
+    decodingAudio: "解码中",
+    audioLoaded: "已载入",
+    processingAudio: "处理中",
+    processedAudio: "已生成",
+    audioDecodeFailed: "解码失败",
+    audioNoiseFailed: "处理失败",
+    downloadNoisedRecent: "下载最近噪化音频",
+    noisedPreview: "噪化音频预览",
     mixerAria: "噪声混音器",
     feature2: "Feature 2",
     mixerTitle: "噪声混音器",
@@ -125,6 +144,25 @@ const I18N = {
     normalizeExport: "Normalize peak to -1 dB",
     generateDownload: "Generate and download",
     downloadRecent: "Download the latest generated audio",
+    audioNoiseAria: "Audio noising",
+    feature3: "Feature 3",
+    audioNoiseTitle: "Audio Noising",
+    sourceAudio: "Source audio",
+    sourceFile: "File",
+    sourceDuration: "Duration",
+    sourceLevel: "Source level",
+    noiseLevel: "Noise level",
+    outputGain: "Output gain",
+    renderNoised: "Generate noised audio",
+    noAudioFile: "No audio selected",
+    decodingAudio: "Decoding",
+    audioLoaded: "Loaded",
+    processingAudio: "Processing",
+    processedAudio: "Generated",
+    audioDecodeFailed: "Decode failed",
+    audioNoiseFailed: "Processing failed",
+    downloadNoisedRecent: "Download latest noised audio",
+    noisedPreview: "Noised audio preview",
     mixerAria: "Noise mixer",
     feature2: "Feature 2",
     mixerTitle: "Noise Mixer",
@@ -192,6 +230,20 @@ const dom = {
   exportState: document.querySelector("#exportState"),
   exportProgress: document.querySelector("#exportProgress"),
   downloadLink: document.querySelector("#downloadLink"),
+  audioFileInput: document.querySelector("#audioFileInput"),
+  audioNoiseState: document.querySelector("#audioNoiseState"),
+  sourceFileName: document.querySelector("#sourceFileName"),
+  sourceDurationValue: document.querySelector("#sourceDurationValue"),
+  sourceLevelControl: document.querySelector("#sourceLevelControl"),
+  sourceLevelValue: document.querySelector("#sourceLevelValue"),
+  noiseLevelControl: document.querySelector("#noiseLevelControl"),
+  noiseLevelValue: document.querySelector("#noiseLevelValue"),
+  noiseOutputGainControl: document.querySelector("#noiseOutputGainControl"),
+  noiseOutputGainValue: document.querySelector("#noiseOutputGainValue"),
+  renderNoisedButton: document.querySelector("#renderNoisedButton"),
+  audioNoiseProgress: document.querySelector("#audioNoiseProgress"),
+  noisedPreview: document.querySelector("#noisedPreview"),
+  noisedDownloadLink: document.querySelector("#noisedDownloadLink"),
   mixerBypass: document.querySelector("#mixerBypass"),
   eqCanvas: document.querySelector("#eqCanvas"),
   eqReadout: document.querySelector("#eqReadout"),
@@ -231,6 +283,14 @@ const state = {
   lastObjectUrl: null,
   lastDownloadFilename: null,
   exportStatusKey: "ready",
+  sourceAudio: {
+    buffer: null,
+    fileName: "",
+    statusKey: "noAudioFile",
+    lastObjectUrl: null,
+    lastDownloadFilename: null,
+    processing: false,
+  },
   mixer: {
     bypass: false,
     eq: EQ_BANDS.map(() => 0),
@@ -253,6 +313,7 @@ const audio = {
   currentVolume: 0,
   targetVolume: 0.36,
   mixerProcessor: null,
+  decodeContext: null,
   meter: 0,
 };
 
@@ -317,6 +378,10 @@ function applyLanguage() {
   if (state.lastDownloadFilename) {
     dom.downloadLink.textContent = `${t("downloadPrefix")} ${state.lastDownloadFilename}`;
   }
+  if (state.sourceAudio.lastDownloadFilename) {
+    dom.noisedDownloadLink.textContent = `${t("downloadPrefix")} ${state.sourceAudio.lastDownloadFilename}`;
+  }
+  updateAudioNoiseReadouts();
   updateAudioLabels();
   renderAll();
 }
@@ -1634,6 +1699,36 @@ function getExportSeconds() {
   return clamp(Number.isFinite(seconds) ? seconds : 30, 1, 600);
 }
 
+function formatDuration(seconds) {
+  const safeSeconds = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
+  const whole = safeSeconds > 0 && safeSeconds < 1 ? 1 : Math.round(safeSeconds);
+  const hours = Math.floor(whole / 3600);
+  const minutes = Math.floor((whole % 3600) / 60);
+  const remaining = whole % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(remaining).padStart(2, "0")}`;
+}
+
+function formatSampleRate(sampleRate) {
+  return `${(sampleRate / 1000).toFixed(sampleRate % 1000 === 0 ? 0 : 1)} kHz`;
+}
+
+function updateAudioNoiseReadouts() {
+  const source = state.sourceAudio;
+  dom.audioNoiseState.textContent = t(source.statusKey);
+  dom.sourceFileName.textContent = source.fileName || t("noAudioFile");
+  dom.sourceDurationValue.textContent = source.buffer
+    ? `${formatDuration(source.buffer.duration)} / ${source.buffer.numberOfChannels} ch / ${formatSampleRate(source.buffer.sampleRate)}`
+    : "0:00";
+
+  dom.sourceLevelValue.textContent = `${dom.sourceLevelControl.value}%`;
+  dom.noiseLevelValue.textContent = `${dom.noiseLevelControl.value}%`;
+  dom.noiseOutputGainValue.textContent = `${dom.noiseOutputGainControl.value}%`;
+  dom.renderNoisedButton.disabled = !source.buffer || source.processing;
+}
+
 function normalizeSamples(samples) {
   const audioData = getAudioDataInfo(samples);
   let peak = 0;
@@ -1657,6 +1752,164 @@ function normalizeSamples(samples) {
     for (let i = 0; i < samples.length; i += 1) {
       samples[i] *= gain;
     }
+  }
+}
+
+async function ensureDecodeContext() {
+  if (!audio.decodeContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      throw new Error("AudioContext is not supported in this browser");
+    }
+    audio.decodeContext = new AudioContextClass({ latencyHint: "playback" });
+  }
+  return audio.decodeContext;
+}
+
+function clearNoisedOutput() {
+  if (state.sourceAudio.lastObjectUrl) {
+    URL.revokeObjectURL(state.sourceAudio.lastObjectUrl);
+  }
+  state.sourceAudio.lastObjectUrl = null;
+  state.sourceAudio.lastDownloadFilename = null;
+  dom.noisedDownloadLink.hidden = true;
+  dom.noisedPreview.hidden = true;
+  dom.noisedPreview.removeAttribute("src");
+  dom.noisedPreview.load();
+  dom.audioNoiseProgress.style.width = "0%";
+}
+
+async function loadSourceAudio(file) {
+  clearNoisedOutput();
+
+  if (!file) {
+    state.sourceAudio.buffer = null;
+    state.sourceAudio.fileName = "";
+    state.sourceAudio.statusKey = "noAudioFile";
+    updateAudioNoiseReadouts();
+    return;
+  }
+
+  state.sourceAudio.statusKey = "decodingAudio";
+  state.sourceAudio.processing = true;
+  updateAudioNoiseReadouts();
+
+  try {
+    const context = await ensureDecodeContext();
+    const arrayBuffer = await file.arrayBuffer();
+    const decoded = await context.decodeAudioData(arrayBuffer.slice(0));
+    state.sourceAudio.buffer = decoded;
+    state.sourceAudio.fileName = file.name;
+    state.sourceAudio.statusKey = "audioLoaded";
+  } catch (error) {
+    state.sourceAudio.buffer = null;
+    state.sourceAudio.fileName = file.name || "";
+    state.sourceAudio.statusKey = "audioDecodeFailed";
+    throw error;
+  } finally {
+    state.sourceAudio.processing = false;
+    updateAudioNoiseReadouts();
+  }
+}
+
+function decodedSampleAt(buffer, outputIndex, outputSampleRate, channel) {
+  const channelIndex = Math.min(channel, buffer.numberOfChannels - 1);
+  const data = buffer.getChannelData(channelIndex);
+  const sourcePosition = (outputIndex * buffer.sampleRate) / outputSampleRate;
+  const index = Math.floor(sourcePosition);
+
+  if (index < 0 || index >= data.length) {
+    return 0;
+  }
+  if (index >= data.length - 1) {
+    return data[index] || 0;
+  }
+
+  const fraction = sourcePosition - index;
+  return data[index] * (1 - fraction) + data[index + 1] * fraction;
+}
+
+function sourceBaseName(fileName) {
+  return sanitizeFilename((fileName || "source-audio").replace(/\.[^.]+$/, ""));
+}
+
+async function renderNoisedAudio() {
+  const buffer = state.sourceAudio.buffer;
+  if (!buffer) {
+    state.sourceAudio.statusKey = "noAudioFile";
+    updateAudioNoiseReadouts();
+    return;
+  }
+
+  const sampleRate = Number(dom.sampleRateSelect.value);
+  const totalSamples = Math.max(1, Math.round(buffer.duration * sampleRate));
+  const samples = {
+    left: new Float32Array(totalSamples),
+    right: new Float32Array(totalSamples),
+  };
+  const generator = new NoiseGenerator(sampleRate, Date.now() ^ Math.round(state.hue * 1000) ^ totalSamples);
+  const noiseMixer = new MixerProcessor(sampleRate, state.mixer);
+  const mix = { ...state.mix };
+  const renderChunk = 16384;
+  const sourceLevel = Number(dom.sourceLevelControl.value) / 100;
+  const noiseLevel = Number(dom.noiseLevelControl.value) / 100;
+  const outputGain = Number(dom.noiseOutputGainControl.value) / 100;
+
+  state.sourceAudio.processing = true;
+  state.sourceAudio.statusKey = "processingAudio";
+  dom.audioNoiseProgress.style.width = "0%";
+  dom.noisedDownloadLink.hidden = true;
+  dom.noisedPreview.hidden = true;
+  updateAudioNoiseReadouts();
+
+  try {
+    for (let offset = 0; offset < totalSamples; offset += renderChunk) {
+      const end = Math.min(totalSamples, offset + renderChunk);
+      for (let i = offset; i < end; i += 1) {
+        const sourceLeft = decodedSampleAt(buffer, i, sampleRate, 0) * sourceLevel;
+        const sourceRight = decodedSampleAt(buffer, i, sampleRate, 1) * sourceLevel;
+        const noiseMono = generator.nextSample(mix);
+        const [noiseLeft, noiseRight] = noiseMixer.process(noiseMono);
+        samples.left[i] = softLimit((sourceLeft + noiseLeft * noiseLevel) * outputGain);
+        samples.right[i] = softLimit((sourceRight + noiseRight * noiseLevel) * outputGain);
+      }
+      const progress = Math.round((end / totalSamples) * 82);
+      dom.audioNoiseProgress.style.width = `${progress}%`;
+      dom.audioNoiseState.textContent = `${Math.round((end / totalSamples) * 100)}%`;
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    }
+
+    if (dom.normalizeExport.checked) {
+      normalizeSamples(samples);
+    }
+
+    dom.audioNoiseProgress.style.width = "92%";
+    dom.audioNoiseState.textContent = t("encoding");
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    const encoder = encoderForFormat(dom.formatSelect.value);
+    const encoded = encoder(samples, sampleRate);
+    const blob = new Blob([encoded.buffer], { type: encoded.mime });
+    const filename = `${sourceBaseName(state.sourceAudio.fileName)}-${state.dominant.id}-noised.${encoded.extension}`;
+
+    if (state.sourceAudio.lastObjectUrl) {
+      URL.revokeObjectURL(state.sourceAudio.lastObjectUrl);
+    }
+
+    state.sourceAudio.lastObjectUrl = URL.createObjectURL(blob);
+    state.sourceAudio.lastDownloadFilename = filename;
+    dom.noisedDownloadLink.href = state.sourceAudio.lastObjectUrl;
+    dom.noisedDownloadLink.download = filename;
+    dom.noisedDownloadLink.textContent = `${t("downloadPrefix")} ${filename}`;
+    dom.noisedDownloadLink.hidden = false;
+    dom.noisedPreview.src = state.sourceAudio.lastObjectUrl;
+    dom.noisedPreview.hidden = false;
+    dom.audioNoiseProgress.style.width = "100%";
+    state.sourceAudio.statusKey = "processedAudio";
+    dom.audioNoiseState.textContent = t(state.sourceAudio.statusKey);
+  } finally {
+    state.sourceAudio.processing = false;
+    updateAudioNoiseReadouts();
   }
 }
 
@@ -1789,6 +2042,28 @@ function bindEvents() {
       state.exportStatusKey = "exportFailed";
       dom.exportState.textContent = t(state.exportStatusKey);
       dom.exportButton.disabled = false;
+      console.error(error);
+    });
+  });
+
+  dom.audioFileInput.addEventListener("change", () => {
+    loadSourceAudio(dom.audioFileInput.files[0]).catch((error) => {
+      state.sourceAudio.statusKey = "audioDecodeFailed";
+      state.sourceAudio.processing = false;
+      updateAudioNoiseReadouts();
+      console.error(error);
+    });
+  });
+
+  [dom.sourceLevelControl, dom.noiseLevelControl, dom.noiseOutputGainControl].forEach((control) => {
+    control.addEventListener("input", updateAudioNoiseReadouts);
+  });
+
+  dom.renderNoisedButton.addEventListener("click", () => {
+    renderNoisedAudio().catch((error) => {
+      state.sourceAudio.statusKey = "audioNoiseFailed";
+      state.sourceAudio.processing = false;
+      updateAudioNoiseReadouts();
       console.error(error);
     });
   });

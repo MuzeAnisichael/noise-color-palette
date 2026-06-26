@@ -12,6 +12,7 @@ A dependency-free browser app for noise synthesis and mixing. It turns noise col
 - Chinese/English UI switching, persisted with `localStorage`.
 - Real-time spectrum curve and spectrum-shaping metrics.
 - Independent mixer: 5-band EQ curve, reverb, pan, spatial width, and spatial delay.
+- Audio noising: upload a source file, then layer the current palette noise through the current mixer.
 - Configurable export duration, sample rate, and audio format.
 - Exports `WAV 16-bit PCM`, `WAV 32-bit Float`, `AIFF 16-bit PCM`, and `AU 16-bit PCM`.
 - Mixer-enabled exports are stereo.
@@ -35,7 +36,7 @@ http://localhost:5173/
 ```text
 .
 ├── .github/                 # GitHub Actions and issue/PR templates
-├── app.js                   # Noise synthesis, mixer DSP, export encoding, i18n
+├── app.js                   # Noise synthesis, mixer DSP, audio noising, export encoding, i18n
 ├── index.html               # App UI
 ├── styles.css               # Responsive styles
 ├── README.md                # Chinese README
@@ -59,6 +60,8 @@ This project uses a designed, explainable mapping. It does not claim a physical 
 ## Export Notes
 
 Export does not record the real-time playback stream. It offline-renders the current palette and mixer settings for the requested duration, then writes the selected audio format. Peak normalization defaults to about `-1 dB` to reduce loudness differences between noise colours and mixer settings.
+
+Audio noising decodes the uploaded file locally in the browser, keeps the source stereo channels, then layers in noise shaped by the current palette and mixer. The output uses the selected sample rate, format, and normalization setting.
 
 ## Development Check
 
