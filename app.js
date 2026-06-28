@@ -76,6 +76,22 @@ const I18N = {
     audioNoiseFailed: "处理失败",
     downloadNoisedRecent: "下载最近噪化音频",
     noisedPreview: "噪化音频预览",
+    audioLossTitle: "音频全损",
+    feature4: "Feature 4",
+    lossPreset: "全损预设",
+    lossPresetMeme: "经典全损",
+    lossPresetPhone: "电话转载",
+    lossPresetDeepfried: "压爆过载",
+    lossPresetBitcrush: "低位塌缩",
+    lossIntensity: "损坏强度",
+    lossBits: "位深",
+    lossCrushRate: "塌缩采样",
+    lossBandwidth: "带宽保留",
+    lossDrive: "压爆",
+    renderLoss: "生成全损音频",
+    audioLossFailed: "全损失败",
+    downloadLossRecent: "下载最近全损音频",
+    lossPreview: "全损音频预览",
     mixerAria: "噪声混音器",
     feature2: "Feature 2",
     mixerTitle: "噪声混音器",
@@ -163,6 +179,22 @@ const I18N = {
     audioNoiseFailed: "Processing failed",
     downloadNoisedRecent: "Download latest noised audio",
     noisedPreview: "Noised audio preview",
+    audioLossTitle: "Audio Lossifier",
+    feature4: "Feature 4",
+    lossPreset: "Loss preset",
+    lossPresetMeme: "Classic loss",
+    lossPresetPhone: "Phone repost",
+    lossPresetDeepfried: "Deep fried",
+    lossPresetBitcrush: "Bit collapse",
+    lossIntensity: "Damage",
+    lossBits: "Bit depth",
+    lossCrushRate: "Crush rate",
+    lossBandwidth: "Bandwidth kept",
+    lossDrive: "Drive",
+    renderLoss: "Generate lossified audio",
+    audioLossFailed: "Loss failed",
+    downloadLossRecent: "Download latest lossified audio",
+    lossPreview: "Lossified audio preview",
     mixerAria: "Noise mixer",
     feature2: "Feature 2",
     mixerTitle: "Noise Mixer",
@@ -244,6 +276,22 @@ const dom = {
   audioNoiseProgress: document.querySelector("#audioNoiseProgress"),
   noisedPreview: document.querySelector("#noisedPreview"),
   noisedDownloadLink: document.querySelector("#noisedDownloadLink"),
+  audioLossState: document.querySelector("#audioLossState"),
+  lossPresetSelect: document.querySelector("#lossPresetSelect"),
+  lossIntensityControl: document.querySelector("#lossIntensityControl"),
+  lossIntensityValue: document.querySelector("#lossIntensityValue"),
+  lossBitsControl: document.querySelector("#lossBitsControl"),
+  lossBitsValue: document.querySelector("#lossBitsValue"),
+  lossCrushRateControl: document.querySelector("#lossCrushRateControl"),
+  lossCrushRateValue: document.querySelector("#lossCrushRateValue"),
+  lossBandwidthControl: document.querySelector("#lossBandwidthControl"),
+  lossBandwidthValue: document.querySelector("#lossBandwidthValue"),
+  lossDriveControl: document.querySelector("#lossDriveControl"),
+  lossDriveValue: document.querySelector("#lossDriveValue"),
+  renderLossButton: document.querySelector("#renderLossButton"),
+  audioLossProgress: document.querySelector("#audioLossProgress"),
+  lossPreview: document.querySelector("#lossPreview"),
+  lossDownloadLink: document.querySelector("#lossDownloadLink"),
   mixerBypass: document.querySelector("#mixerBypass"),
   eqCanvas: document.querySelector("#eqCanvas"),
   eqReadout: document.querySelector("#eqReadout"),
@@ -286,6 +334,12 @@ const state = {
   sourceAudio: {
     buffer: null,
     fileName: "",
+    statusKey: "noAudioFile",
+    lastObjectUrl: null,
+    lastDownloadFilename: null,
+    processing: false,
+  },
+  lossAudio: {
     statusKey: "noAudioFile",
     lastObjectUrl: null,
     lastDownloadFilename: null,
@@ -381,7 +435,11 @@ function applyLanguage() {
   if (state.sourceAudio.lastDownloadFilename) {
     dom.noisedDownloadLink.textContent = `${t("downloadPrefix")} ${state.sourceAudio.lastDownloadFilename}`;
   }
+  if (state.lossAudio.lastDownloadFilename) {
+    dom.lossDownloadLink.textContent = `${t("downloadPrefix")} ${state.lossAudio.lastDownloadFilename}`;
+  }
   updateAudioNoiseReadouts();
+  updateAudioLossReadouts();
   updateAudioLabels();
   renderAll();
 }
@@ -1726,7 +1784,25 @@ function updateAudioNoiseReadouts() {
   dom.sourceLevelValue.textContent = `${dom.sourceLevelControl.value}%`;
   dom.noiseLevelValue.textContent = `${dom.noiseLevelControl.value}%`;
   dom.noiseOutputGainValue.textContent = `${dom.noiseOutputGainControl.value}%`;
-  dom.renderNoisedButton.disabled = !source.buffer || source.processing;
+  dom.renderNoisedButton.disabled = !source.buffer || source.processing || state.lossAudio.processing;
+}
+
+const LOSS_PRESETS = {
+  meme: { intensity: 72, bits: 6, crushRate: 8, bandwidth: 36, drive: 18 },
+  phone: { intensity: 58, bits: 8, crushRate: 11, bandwidth: 24, drive: 9 },
+  deepfried: { intensity: 92, bits: 5, crushRate: 6, bandwidth: 42, drive: 30 },
+  bitcrush: { intensity: 80, bits: 4, crushRate: 5, bandwidth: 70, drive: 12 },
+};
+
+function updateAudioLossReadouts() {
+  const loss = state.lossAudio;
+  dom.audioLossState.textContent = t(loss.statusKey);
+  dom.lossIntensityValue.textContent = `${dom.lossIntensityControl.value}%`;
+  dom.lossBitsValue.textContent = `${dom.lossBitsControl.value}-bit`;
+  dom.lossCrushRateValue.textContent = `${dom.lossCrushRateControl.value} kHz`;
+  dom.lossBandwidthValue.textContent = `${dom.lossBandwidthControl.value}%`;
+  dom.lossDriveValue.textContent = `${dom.lossDriveControl.value} dB`;
+  dom.renderLossButton.disabled = !state.sourceAudio.buffer || state.sourceAudio.processing || loss.processing;
 }
 
 function normalizeSamples(samples) {
@@ -1779,14 +1855,40 @@ function clearNoisedOutput() {
   dom.audioNoiseProgress.style.width = "0%";
 }
 
+function clearLossOutput() {
+  if (state.lossAudio.lastObjectUrl) {
+    URL.revokeObjectURL(state.lossAudio.lastObjectUrl);
+  }
+  state.lossAudio.lastObjectUrl = null;
+  state.lossAudio.lastDownloadFilename = null;
+  dom.lossDownloadLink.hidden = true;
+  dom.lossPreview.hidden = true;
+  dom.lossPreview.removeAttribute("src");
+  dom.lossPreview.load();
+  dom.audioLossProgress.style.width = "0%";
+}
+
+function setLossPreset(presetId) {
+  const preset = LOSS_PRESETS[presetId] || LOSS_PRESETS.meme;
+  dom.lossIntensityControl.value = preset.intensity;
+  dom.lossBitsControl.value = preset.bits;
+  dom.lossCrushRateControl.value = preset.crushRate;
+  dom.lossBandwidthControl.value = preset.bandwidth;
+  dom.lossDriveControl.value = preset.drive;
+  updateAudioLossReadouts();
+}
+
 async function loadSourceAudio(file) {
   clearNoisedOutput();
+  clearLossOutput();
 
   if (!file) {
     state.sourceAudio.buffer = null;
     state.sourceAudio.fileName = "";
     state.sourceAudio.statusKey = "noAudioFile";
+    state.lossAudio.statusKey = "noAudioFile";
     updateAudioNoiseReadouts();
+    updateAudioLossReadouts();
     return;
   }
 
@@ -1801,14 +1903,17 @@ async function loadSourceAudio(file) {
     state.sourceAudio.buffer = decoded;
     state.sourceAudio.fileName = file.name;
     state.sourceAudio.statusKey = "audioLoaded";
+    state.lossAudio.statusKey = "audioLoaded";
   } catch (error) {
     state.sourceAudio.buffer = null;
     state.sourceAudio.fileName = file.name || "";
     state.sourceAudio.statusKey = "audioDecodeFailed";
+    state.lossAudio.statusKey = "audioDecodeFailed";
     throw error;
   } finally {
     state.sourceAudio.processing = false;
     updateAudioNoiseReadouts();
+    updateAudioLossReadouts();
   }
 }
 
@@ -1861,6 +1966,7 @@ async function renderNoisedAudio() {
   dom.noisedDownloadLink.hidden = true;
   dom.noisedPreview.hidden = true;
   updateAudioNoiseReadouts();
+  updateAudioLossReadouts();
 
   try {
     for (let offset = 0; offset < totalSamples; offset += renderChunk) {
@@ -1909,6 +2015,153 @@ async function renderNoisedAudio() {
     dom.audioNoiseState.textContent = t(state.sourceAudio.statusKey);
   } finally {
     state.sourceAudio.processing = false;
+    updateAudioNoiseReadouts();
+    updateAudioLossReadouts();
+  }
+}
+
+function onePoleAlphaFor(frequency, sampleRate) {
+  return 1 - Math.exp((-2 * Math.PI * frequency) / sampleRate);
+}
+
+function lossSettingsFromControls(sampleRate) {
+  const intensity = Number(dom.lossIntensityControl.value) / 100;
+  const bits = Number(dom.lossBitsControl.value);
+  const crushRate = Number(dom.lossCrushRateControl.value) * 1000;
+  const bandwidth = Number(dom.lossBandwidthControl.value) / 100;
+  const driveDb = Number(dom.lossDriveControl.value);
+  const lowCut = clamp(40 + intensity * 520 * (1 - bandwidth * 0.42), 20, 1200);
+  const highCut = clamp((1800 + bandwidth * 14200) * (1 - intensity * 0.32), lowCut * 1.6, sampleRate * 0.44);
+  const holdSamples = clamp(Math.round(sampleRate / clamp(crushRate, 1000, sampleRate)), 1, Math.round(sampleRate / 1000));
+
+  return {
+    intensity,
+    bits,
+    quantMax: Math.max(1, Math.pow(2, bits - 1) - 1),
+    holdSamples,
+    jitter: intensity * 0.7,
+    dropoutChance: intensity * intensity * 0.018,
+    dropoutMax: Math.max(1, Math.round(holdSamples * (1 + intensity * 5))),
+    driveGain: dbToGain(driveDb * (0.55 + intensity * 0.7)),
+    lowpassAlpha: onePoleAlphaFor(highCut, sampleRate),
+    highpassAlpha: onePoleAlphaFor(lowCut, sampleRate),
+    smear: intensity * 0.42,
+    makeup: 0.82 + intensity * 0.24,
+  };
+}
+
+function createLossChannelState(seed) {
+  return {
+    random: createPrng(seed),
+    held: 0,
+    holdRemaining: 0,
+    dropoutRemaining: 0,
+    highpassMemory: 0,
+    lowpassMemory: 0,
+    previous: 0,
+  };
+}
+
+function processLossSample(input, channelState, settings) {
+  if (channelState.holdRemaining <= 0) {
+    const jitter = Math.round((channelState.random() * 2 - 1) * settings.holdSamples * settings.jitter);
+    channelState.held = input;
+    channelState.holdRemaining = Math.max(1, settings.holdSamples + jitter);
+    if (channelState.random() < settings.dropoutChance) {
+      channelState.dropoutRemaining = Math.ceil(channelState.random() * settings.dropoutMax);
+    }
+  }
+  channelState.holdRemaining -= 1;
+
+  const held = channelState.dropoutRemaining > 0 ? channelState.previous * 0.74 : channelState.held;
+  if (channelState.dropoutRemaining > 0) {
+    channelState.dropoutRemaining -= 1;
+  }
+
+  const denominator = Math.tanh(settings.driveGain) || 1;
+  const driven = Math.tanh(held * settings.driveGain) / denominator;
+  channelState.highpassMemory += settings.highpassAlpha * (driven - channelState.highpassMemory);
+  const highpassed = driven - channelState.highpassMemory;
+  channelState.lowpassMemory += settings.lowpassAlpha * (highpassed - channelState.lowpassMemory);
+  const quantized = Math.round(clamp(channelState.lowpassMemory, -1, 1) * settings.quantMax) / settings.quantMax;
+  const smeared = quantized * (1 - settings.smear) + channelState.previous * settings.smear;
+  channelState.previous = smeared;
+  return softLimit(smeared * settings.makeup);
+}
+
+async function renderLossAudio() {
+  const buffer = state.sourceAudio.buffer;
+  if (!buffer) {
+    state.lossAudio.statusKey = "noAudioFile";
+    updateAudioLossReadouts();
+    return;
+  }
+
+  const sampleRate = Number(dom.sampleRateSelect.value);
+  const totalSamples = Math.max(1, Math.round(buffer.duration * sampleRate));
+  const samples = {
+    left: new Float32Array(totalSamples),
+    right: new Float32Array(totalSamples),
+  };
+  const settings = lossSettingsFromControls(sampleRate);
+  const leftState = createLossChannelState(Date.now() ^ totalSamples);
+  const rightState = createLossChannelState(Date.now() ^ Math.round(buffer.duration * 1000) ^ 0x9e3779b9);
+  const renderChunk = 16384;
+
+  state.lossAudio.processing = true;
+  state.lossAudio.statusKey = "processingAudio";
+  dom.audioLossProgress.style.width = "0%";
+  dom.lossDownloadLink.hidden = true;
+  dom.lossPreview.hidden = true;
+  updateAudioLossReadouts();
+  updateAudioNoiseReadouts();
+
+  try {
+    for (let offset = 0; offset < totalSamples; offset += renderChunk) {
+      const end = Math.min(totalSamples, offset + renderChunk);
+      for (let i = offset; i < end; i += 1) {
+        const sourceLeft = decodedSampleAt(buffer, i, sampleRate, 0);
+        const sourceRight = decodedSampleAt(buffer, i, sampleRate, 1);
+        samples.left[i] = processLossSample(sourceLeft, leftState, settings);
+        samples.right[i] = processLossSample(sourceRight, rightState, settings);
+      }
+      const progress = Math.round((end / totalSamples) * 82);
+      dom.audioLossProgress.style.width = `${progress}%`;
+      dom.audioLossState.textContent = `${Math.round((end / totalSamples) * 100)}%`;
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    }
+
+    if (dom.normalizeExport.checked) {
+      normalizeSamples(samples);
+    }
+
+    dom.audioLossProgress.style.width = "92%";
+    dom.audioLossState.textContent = t("encoding");
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    const encoder = encoderForFormat(dom.formatSelect.value);
+    const encoded = encoder(samples, sampleRate);
+    const blob = new Blob([encoded.buffer], { type: encoded.mime });
+    const filename = `${sourceBaseName(state.sourceAudio.fileName)}-${dom.lossPresetSelect.value}-loss.${encoded.extension}`;
+
+    if (state.lossAudio.lastObjectUrl) {
+      URL.revokeObjectURL(state.lossAudio.lastObjectUrl);
+    }
+
+    state.lossAudio.lastObjectUrl = URL.createObjectURL(blob);
+    state.lossAudio.lastDownloadFilename = filename;
+    dom.lossDownloadLink.href = state.lossAudio.lastObjectUrl;
+    dom.lossDownloadLink.download = filename;
+    dom.lossDownloadLink.textContent = `${t("downloadPrefix")} ${filename}`;
+    dom.lossDownloadLink.hidden = false;
+    dom.lossPreview.src = state.lossAudio.lastObjectUrl;
+    dom.lossPreview.hidden = false;
+    dom.audioLossProgress.style.width = "100%";
+    state.lossAudio.statusKey = "processedAudio";
+    dom.audioLossState.textContent = t(state.lossAudio.statusKey);
+  } finally {
+    state.lossAudio.processing = false;
+    updateAudioLossReadouts();
     updateAudioNoiseReadouts();
   }
 }
@@ -2063,6 +2316,31 @@ function bindEvents() {
     renderNoisedAudio().catch((error) => {
       state.sourceAudio.statusKey = "audioNoiseFailed";
       state.sourceAudio.processing = false;
+      updateAudioNoiseReadouts();
+      updateAudioLossReadouts();
+      console.error(error);
+    });
+  });
+
+  dom.lossPresetSelect.addEventListener("change", () => {
+    setLossPreset(dom.lossPresetSelect.value);
+  });
+
+  [
+    dom.lossIntensityControl,
+    dom.lossBitsControl,
+    dom.lossCrushRateControl,
+    dom.lossBandwidthControl,
+    dom.lossDriveControl,
+  ].forEach((control) => {
+    control.addEventListener("input", updateAudioLossReadouts);
+  });
+
+  dom.renderLossButton.addEventListener("click", () => {
+    renderLossAudio().catch((error) => {
+      state.lossAudio.statusKey = "audioLossFailed";
+      state.lossAudio.processing = false;
+      updateAudioLossReadouts();
       updateAudioNoiseReadouts();
       console.error(error);
     });

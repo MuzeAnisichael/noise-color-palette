@@ -262,6 +262,56 @@
             <audio id="noisedPreview" class="noised-preview" controls hidden aria-label="噪化音频预览" data-i18n-aria="noisedPreview"></audio>
             <a id="noisedDownloadLink" class="download-link" href="#" download hidden data-i18n="downloadNoisedRecent">下载最近噪化音频</a>
           </section>
+
+          <section class="panel audio-loss-panel" aria-labelledby="audioLossTitle">
+            <div class="panel-heading">
+              <h2 id="audioLossTitle" data-i18n="audioLossTitle">音频全损</h2>
+              <span id="audioLossState" class="metric" data-i18n="noAudioFile">未选择音频</span>
+            </div>
+
+            <label class="file-row">
+              <span data-i18n="lossPreset">全损预设</span>
+              <select id="lossPresetSelect">
+                <option value="meme" data-i18n="lossPresetMeme">经典全损</option>
+                <option value="phone" data-i18n="lossPresetPhone">电话转载</option>
+                <option value="deepfried" data-i18n="lossPresetDeepfried">压爆过载</option>
+                <option value="bitcrush" data-i18n="lossPresetBitcrush">低位塌缩</option>
+              </select>
+            </label>
+
+            <div class="control-stack">
+              <label class="control-row">
+                <span data-i18n="lossIntensity">损坏强度</span>
+                <input id="lossIntensityControl" type="range" min="0" max="100" value="72" />
+                <strong id="lossIntensityValue">72%</strong>
+              </label>
+              <label class="control-row">
+                <span data-i18n="lossBits">位深</span>
+                <input id="lossBitsControl" type="range" min="3" max="12" step="1" value="6" />
+                <strong id="lossBitsValue">6-bit</strong>
+              </label>
+              <label class="control-row">
+                <span data-i18n="lossCrushRate">塌缩采样</span>
+                <input id="lossCrushRateControl" type="range" min="3" max="24" step="1" value="8" />
+                <strong id="lossCrushRateValue">8 kHz</strong>
+              </label>
+              <label class="control-row">
+                <span data-i18n="lossBandwidth">带宽保留</span>
+                <input id="lossBandwidthControl" type="range" min="10" max="100" value="36" />
+                <strong id="lossBandwidthValue">36%</strong>
+              </label>
+              <label class="control-row">
+                <span data-i18n="lossDrive">压爆</span>
+                <input id="lossDriveControl" type="range" min="0" max="36" value="18" />
+                <strong id="lossDriveValue">18 dB</strong>
+              </label>
+            </div>
+
+            <button id="renderLossButton" class="primary-action" type="button" data-i18n="renderLoss" disabled>生成全损音频</button>
+            <div class="progress" aria-hidden="true"><span id="audioLossProgress"></span></div>
+            <audio id="lossPreview" class="noised-preview" controls hidden aria-label="全损音频预览" data-i18n-aria="lossPreview"></audio>
+            <a id="lossDownloadLink" class="download-link" href="#" download hidden data-i18n="downloadLossRecent">下载最近全损音频</a>
+          </section>
         </section>
       </section>
     </main>

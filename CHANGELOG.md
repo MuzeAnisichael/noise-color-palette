@@ -7,6 +7,7 @@
 - Made green a stronger, narrower midrange focus with weaker low and high extremes.
 - Changed the red-violet transition into a midrange scoop that reinforces low and high edges.
 - Added audio noising for uploaded files using the current palette noise and mixer settings.
+- Added an audio lossifier for uploaded files with clipping, bitcrush, sample-rate crush, bandwidth narrowing, and time smear.
 - Added Chinese/English UI switching.
 - Added bilingual README navigation.
 - Added GitHub Actions static check and repository templates.
